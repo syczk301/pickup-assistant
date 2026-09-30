@@ -16,6 +16,7 @@ class PickupWidget : AppWidgetProvider() {
             manager.updateAppWidget(id, views)
         }
     }
+
     companion object {
         fun refresh(c: Context) {
             val manager = AppWidgetManager.getInstance(c)
