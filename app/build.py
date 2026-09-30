@@ -1,4 +1,4 @@
-"""Reproducible APK build with official Android SDK tools; Java 17, no Gradle required."""
+"""Build Kotlin Android sources with Kotlin 2.1.20 and official SDK tools."""
 import os
 import pathlib
 import shutil
@@ -12,6 +12,13 @@ JAVA_HOME = pathlib.Path(os.environ.get('JAVA_HOME', 'C:/Program Files/Microsoft
 JAVA = str(JAVA_HOME / 'bin' / 'java.exe')
 JAVAC = str(JAVA_HOME / 'bin' / 'javac.exe')
 KEYTOOL = str(JAVA_HOME / 'bin' / 'keytool.exe')
+KOTLIN = pathlib.Path(os.environ.get('KOTLIN_HOME', str(ROOT.parent / '.tools' / 'kotlin' / 'kotlinc')))
+STDLIB = KOTLIN / 'lib' / 'kotlin-stdlib.jar'
+D8 = pathlib.Path(os.environ.get('D8_JAR', str(ROOT.parent / '.tools' / 'r8-8.7.18.jar')))
+if not D8.exists():
+    raise SystemExit('Set D8_JAR to D8/R8 8.6 or newer (Kotlin 2.1 metadata support required).')
+if not STDLIB.exists():
+    raise SystemExit('Set KOTLIN_HOME to a Kotlin 2.1.20 command-line compiler installation.')
 TOOLS = SDK / 'android-15'
 if not (TOOLS / 'aapt2.exe').exists():
     TOOLS = SDK / 'build-tools' / '35.0.0'
@@ -37,17 +44,22 @@ classes = BUILD/'classes'
 if classes.exists():
     shutil.rmtree(classes)
 classes.mkdir()
-sources = list((ROOT/'src').rglob('*.java')) + list((BUILD/'generated').rglob('*.java'))
+sources = list((BUILD/'generated').rglob('*.java'))
 boot = os.pathsep.join(os.path.relpath(p, ROOT) for p in [ANDROID, TOOLS/'core-lambda-stubs.jar'])
 run(JAVAC, '-encoding', 'UTF-8', '-source', '8', '-target', '8', '-bootclasspath', boot,
     '-d', classes, *sources)
+classpath = os.pathsep.join(os.path.relpath(p, ROOT) for p in [ANDROID, classes, STDLIB])
+run(JAVA, '-cp', os.path.relpath(KOTLIN/'lib'/'*', ROOT),
+    'org.jetbrains.kotlin.cli.jvm.K2JVMCompiler', '-kotlin-home', KOTLIN,
+    '-no-reflect', '-jvm-target', '1.8', '-classpath', classpath,
+    '-d', classes, *list((ROOT/'src').rglob('*.kt')))
 with zipfile.ZipFile(BUILD/'classes.jar', 'w') as z:
     for f in classes.rglob('*.class'):
         z.write(f, f.relative_to(classes).as_posix())
 dex = BUILD/'dex'
 dex.mkdir(exist_ok=True)
-run(JAVA, '-cp', TOOLS/'lib/d8.jar', 'com.android.tools.r8.D8', '--min-api', '26',
-    '--lib', ANDROID, '--output', dex, BUILD/'classes.jar')
+run(JAVA, '-cp', D8, 'com.android.tools.r8.D8', '--min-api', '26',
+    '--lib', ANDROID, '--output', dex, BUILD/'classes.jar', STDLIB)
 shutil.copy2(BUILD/'base.apk', BUILD/'unsigned.apk')
 with zipfile.ZipFile(BUILD/'unsigned.apk', 'a') as z:
     z.write(dex/'classes.dex', 'classes.dex')

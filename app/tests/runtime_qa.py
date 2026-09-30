@@ -1,5 +1,6 @@
 """ADB helpers for repeatable QA on a dedicated Android emulator (not a personal phone)."""
 import json
+import os
 import pathlib
 import re
 import subprocess
@@ -9,8 +10,8 @@ import xml.etree.ElementTree as ET
 
 sys.stdout.reconfigure(encoding='utf-8')
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-ADB = ROOT/'.tools/sdk/platform-tools/adb.exe'
-SERIAL = 'emulator-5564'
+ADB = pathlib.Path(os.environ.get('ADB_PATH', str(ROOT/'.tools/sdk/platform-tools/adb.exe')))
+SERIAL = os.environ.get('ANDROID_SERIAL', 'emulator-5568')
 SHOTS = ROOT/'deliverables/screenshots'
 
 def adb(*args):
@@ -49,6 +50,7 @@ def scroll_to(label):
     raise AssertionError('Cannot scroll to '+label)
 
 def fill(value):
+    time.sleep(0.5)
     out=adb('shell','uiautomator','runtest','/data/local/tmp/filltext.jar','-c','qa.FillText','-e','text',value).decode('utf-8','replace')
     if 'OK (1 test)' not in out:
         raise AssertionError(out)
