@@ -1,52 +1,35 @@
 # 取件助手
 
-原生 Kotlin Android 取件码管理应用，支持 Android 8.0 及以上，MIT 许可证。当前版本 **0.3.0**，应用的 11 个模块已全部迁移至 Kotlin。
+原生 Kotlin Android 应用，包名 `com.local.pickup`，最低 Android 8.0。当前版本 0.4.0，版本号 5，MIT 许可证。
 
-[下载 APK](https://github.com/syczk301/pickup-assistant/releases/download/v0.3.0/pickup-assistant-0.3.0.apk) · [发布版本](https://github.com/syczk301/pickup-assistant/releases) · [源码](app/src/com/local/pickup)
-
-## 功能
-
-- 短信识别取件码、粘贴提取、手动添加、编辑与删除。
-- 待取和已取管理、搜索筛选、统计、提醒、小组件。
-- JSON 导入导出；短信与取件记录在本机处理。
-- GitHub 在线更新，安装前校验大小、SHA-256、包名、版本及签名。
-
-迁移保持原包名、签名、SharedPreferences 名称和 JSON 格式，可直接升级原 Java 版本并保留数据。界面继续使用原生 View。
+应用的 11 个模块均使用 Kotlin；短信和取件记录在本机处理。支持短信提取、粘贴识别、记录管理、统计、提醒、小组件、JSON 备份和 GitHub 在线更新。
 
 ## 构建
 
-`app/` 包含 Kotlin 源码、XML 资源、Gradle 配置、SDK 构建脚本和测试。
+需要 Python 3、JDK 17、Android SDK Platform 35、Build Tools 35.0.0、Kotlin 命令行编译器 2.1.20，以及 D8/R8 8.6 或更新版本。本次使用 R8 8.7.18。
 
-Windows 构建脚本需要 Python 3、JDK 17、Android SDK Platform 35、Build Tools 35.0.0、[Kotlin 命令行编译器 2.1.20](https://github.com/JetBrains/kotlin/releases/tag/v2.1.20)，以及 [D8/R8 8.7.18](https://dl.google.com/dl/android/maven2/com/android/tools/r8/8.7.18/r8-8.7.18.jar)。Kotlin 2.1 需要 D8/R8 8.6 或更新版本。
+设置 `JAVA_HOME`、`ANDROID_SDK_ROOT`、`KOTLIN_HOME`（包含 bin/lib 的 kotlinc 目录）和 `D8_JAR`（r8.jar 的完整路径），运行 `python app\build.py`。APK 输出到上一级 `deliverables/`。
 
-设置 `JAVA_HOME`、`ANDROID_SDK_ROOT`、`KOTLIN_HOME`（含 bin/lib 的 kotlinc 目录）和 `D8_JAR`（R8 JAR 完整路径），在仓库根目录执行：
+编译器：[Kotlin 2.1.20](https://github.com/JetBrains/kotlin/releases/tag/v2.1.20)。D8/R8：[8.7.18 JAR](https://dl.google.com/dl/android/maven2/com/android/tools/r8/8.7.18/r8-8.7.18.jar)。Android Studio 可导入 Gradle 配置；本次使用 SDK 脚本构建。
 
-```powershell
-python app\build.py
-```
-
-APK 输出到 `deliverables/`。Android Studio 可导入 `app/` 的 Gradle 项目；本次使用 SDK 脚本构建验证。
-
-签名密钥未公开。自行构建时脚本创建开发密钥，生成的 APK 可新安装；更新已有发布版本必须使用原发布密钥。
+签名文件 `local-debug.jks` 仅保留在本地；后续升级必须使用原发布密钥。自行构建时脚本创建本地开发密钥，可用于新安装，不能更新原发布 APK。
 
 ## 测试
 
-完成构建后，设置 `JSON_TEST_JAR` 为 [org.json:json:20240303](https://repo.maven.apache.org/maven2/org/json/json/20240303/json-20240303.jar) 的 JAR 路径，再运行：
+`tests/ParserTest.kt` 和 `UpdateProtocolTest.kt` 分别覆盖 17 项短信解析和 15 项更新协议检查。`tests/MigrationTest.kt` 验证旧版 JSON 字段、默认值、往返和无效记录拒绝。测试需要先构建，再设置 `JSON_TEST_JAR` 为 org.json:json:20240303 的 JAR 路径，运行 `python app\test.py`。Android 应用使用系统 JSON API。
 
-```powershell
-python app\test.py
-```
-
-测试全部使用 Kotlin：17 项短信解析、15 项更新协议。Kotlin `MigrationTest.kt` 验证旧 JSON 字段、默认值、往返与无效记录拒绝。Android 应用使用系统 JSON API。
-
-API 26 已验证 Java 版本数据保留，以及 Kotlin 版新增、状态切换、粘贴识别、短信接收、通知、统计、深色模式和 JSON 备份，以及 Kotlin 更新模块从 GitHub 下载、校验、系统安装 0.3.0 后保留全部 5 条记录。
+测试全部使用 Kotlin。旧版模拟器操作和中文输入辅助脚本已移除。
 
 ## 在线更新
 
-在“设置 → 应用更新 → 检查更新”中下载安装。默认按 24 小时间隔在进入应用时检查，可关闭或修改 HTTPS 地址。首次安装更新需允许本应用安装，并由用户在系统界面确认。
+源码和发布仓库：https://github.com/syczk301/pickup-assistant
 
-默认版本文件：https://github.com/syczk301/pickup-assistant/releases/latest/download/update.json
+默认地址：https://github.com/syczk301/pickup-assistant/releases/latest/download/update.json
 
-后续发布时增加 Manifest 和 Gradle 中的版本号，使用原密钥构建，创建正式 GitHub Release，上传 APK 与 `update.json` 并设为最新。
+在设置中检查并下载新版本，安装前校验大小、SHA-256、包名、版本和签名，再由安卓系统确认。原 Java 版本的包名、签名、SharedPreferences 名称和 JSON 格式保持兼容。
 
-版本文件包含 `schemaVersion`（1）、`packageName`（`com.local.pickup`）、`versionCode`、`versionName`、`minSdk`、`apkUrl`（HTTPS）、`sizeBytes`、`sha256` 和 `releaseNotes`，文件大小与摘要取自实际 APK。
+## 界面
+
+采用清单布局：按日期分组、突出取件码、快速复制和取件状态切换。搜索、排序、筛选和底部短信识别入口保留。桌面小组件根据高度显示 1 至 3 条记录，取件状态改变后自动刷新。设置页保留检查更新与自动检查开关，更新地址不在界面中显示。
+
+界面图标来自 Google Material Icons / Material Symbols，使用 Apache 2.0 许可证，授权与来源见 `app/third_party/`。应用源码使用 MIT 许可证。

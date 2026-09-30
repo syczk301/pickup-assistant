@@ -1,0 +1,5 @@
+Material Icons and Material Symbols
+Copyright Google LLC
+https://github.com/google/material-design-icons
+Licensed under Apache License 2.0.
+Selected official SVG paths were converted to Android VectorDrawable resources.

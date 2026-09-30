@@ -35,7 +35,7 @@ class UpdateController(private val activity: Activity) {
         worker.shutdownNow()
     }
 
-    fun source() = Store.prefs(context).getString("update_source", DEFAULT_SOURCE).orEmpty()
+    private fun source() = Store.prefs(context).getString("update_source", DEFAULT_SOURCE).orEmpty().ifEmpty { DEFAULT_SOURCE }
 
     fun version() =
         context.packageManager.getPackageInfo(context.packageName, 0).versionName.orEmpty()
@@ -50,51 +50,6 @@ class UpdateController(private val activity: Activity) {
                 .setMessage(message)
                 .setPositiveButton("知道了", null)
                 .show()
-    }
-
-    fun configure() {
-        val input =
-            EditText(activity).apply {
-                setSingleLine()
-                inputType =
-                    android.text.InputType.TYPE_CLASS_TEXT or
-                        android.text.InputType.TYPE_TEXT_VARIATION_URI
-                setText(source())
-                setPadding(32, 24, 32, 24)
-            }
-        val dialog =
-            AlertDialog.Builder(activity)
-                .setTitle("更新地址")
-                .setMessage("填写 HTTPS 版本文件地址。更换地址会取消正在下载的更新。")
-                .setView(input)
-                .setNegativeButton("取消", null)
-                .setNeutralButton("恢复默认") { _, _ -> setSource(DEFAULT_SOURCE) }
-                .setPositiveButton("保存", null)
-                .create()
-        dialog.setOnShowListener {
-            dialog.getButton(-1).setOnClickListener {
-                try {
-                    val value = input.text.toString().trim()
-                    UpdateProtocol.https(value)
-                    setSource(value)
-                    dialog.dismiss()
-                } catch (e: IOException) {
-                    input.error = e.message
-                }
-            }
-        }
-        dialog.show()
-    }
-
-    private fun setSource(value: String) {
-        cancelDownload()
-        Store.prefs(context)
-            .edit()
-            .putString("update_source", value)
-            .putLong("update_last_check", 0)
-            .putInt("update_prompted", 0)
-            .apply()
-        Toast.makeText(activity, "更新地址已保存", Toast.LENGTH_SHORT).show()
     }
 
     private fun cancelDownload() =
@@ -154,10 +109,6 @@ class UpdateController(private val activity: Activity) {
             return
         }
         val url = source()
-        if (url.isEmpty()) {
-            configure()
-            return
-        }
         checking = true
         Store.prefs(context).edit().putLong("update_last_check", System.currentTimeMillis()).apply()
         if (manual) Toast.makeText(activity, "正在检查更新…", Toast.LENGTH_SHORT).show()
