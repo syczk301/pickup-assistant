@@ -210,17 +210,6 @@ class MainActivity : Activity() {
             1 -> stats()
             else -> settings()
         }
-        if (page == 0) {
-            val pasteBar = row().apply {
-                gravity = Gravity.CENTER
-                background = shape(if (dark) 0xff253e55.toInt() else 0xffe1efff.toInt(), 24)
-                contentDescription = "粘贴短信识别"
-                setOnClickListener { paste() }
-            }
-            pasteBar.addView(icon(R.drawable.ic_paste, accent, "短信"), LinearLayout.LayoutParams(dp(42), dp(44)))
-            pasteBar.addView(text("粘贴短信识别", 16, accent, true))
-            root.addView(pasteBar, LinearLayout.LayoutParams(-1, dp(44)).apply { setMargins(dp(16), dp(4), dp(16), dp(4)) })
-        }
         divider(root)
         val nav = row().apply { setBackgroundColor(paper); setPadding(dp(16), dp(3), dp(16), dp(3)) }
         root.addView(nav, LinearLayout.LayoutParams(-1, dp(52)))
@@ -243,7 +232,15 @@ class MainActivity : Activity() {
         val pending = all.count { it.completed == 0L }
         val title = row()
         title.addView(text("取件助手", 26, ink, true).apply { includeFontPadding = false }, LinearLayout.LayoutParams(0, -2, 1f))
-        title.addView(icon(R.drawable.ic_add, accent, "手动添加") { edit(null) }.apply { setPadding(dp(6), dp(6), dp(6), dp(6)) }, LinearLayout.LayoutParams(dp(48), dp(48)))
+        title.addView(text("粘贴短信识别", 13, accent, true).apply {
+            gravity = Gravity.CENTER
+            includeFontPadding = false
+            setSingleLine()
+            setPadding(dp(10), 0, dp(10), 0)
+            background = shape(if (dark) 0xff253e55.toInt() else 0xffe1efff.toInt(), 12)
+            contentDescription = "粘贴短信识别"
+            setOnClickListener { paste() }
+        }, LinearLayout.LayoutParams(-2, dp(44)))
         header.addView(title)
         space(header, 4)
         val tabs = row()
@@ -283,6 +280,13 @@ class MainActivity : Activity() {
                 sort = index; Store.prefs(this).edit().putInt("sort", sort).apply(); dialog.dismiss(); render()
             }.show()
         })
+        controls.addView(View(this), LinearLayout.LayoutParams(0, 1, 1f))
+        controls.addView(text("手动添加", 13, muted).apply {
+            gravity = Gravity.CENTER
+            setPadding(dp(8), 0, dp(8), 0)
+            contentDescription = "手动添加"
+            setOnClickListener { edit(null) }
+        }, LinearLayout.LayoutParams(-2, -1))
         controls.addView(View(this), LinearLayout.LayoutParams(0, 1, 1f))
         controls.addView(control(if (carrierFilter == "全部") "筛选" else carrierFilter, muted) {
             AlertDialog.Builder(this).setTitle("快递公司筛选").setItems(withAll()) { _, index -> carrierFilter = withAll()[index]; render() }.show()
