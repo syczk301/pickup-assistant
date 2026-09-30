@@ -36,7 +36,7 @@ java -cp build/tests ParserTest
 
 更新协议测试 `tests/UpdateProtocolTest.java` 需将 `org.json` 的 JAR 加入编译和运行 classpath；Android 应用本身直接使用系统 JSON API。模拟器辅助代码位于 `tests/runtime_qa.py` 和 `tests/FillText.java`。
 
-短信解析 17 项、更新协议 15 项和真实 GitHub 请求通过。API 26 模拟器已完成 0.2.0 → 0.2.1 在线下载安装，确认数据保留。见 [在线更新验证](在线更新验证.md)。
+短信解析 17 项、更新协议 15 项和真实 GitHub 请求通过。API 26 模拟器已完成 0.2.0 → 0.2.1 在线下载安装，确认数据保留。
 
 ## 在线更新
 
@@ -44,4 +44,6 @@ java -cp build/tests ParserTest
 
 默认版本文件：https://github.com/syczk301/pickup-assistant/releases/latest/download/update.json
 
-后续发布方式和版本文件格式见 [在线更新说明](在线更新说明.md)。
+后续发布时增加 Manifest 和 Gradle 配置中的版本号，使用原签名密钥构建，创建正式 GitHub Release，上传 APK 和 `update.json` 并设为最新版本。
+
+`update.json` 包含 `schemaVersion`（1）、`packageName`（`com.local.pickup`）、`versionCode`、`versionName`、`minSdk`、`apkUrl`（HTTPS）、`sizeBytes`、`sha256` 和 `releaseNotes`；大小与摘要必须取自实际 APK。
