@@ -1,4 +1,4 @@
-"""Run original Java regression tests against Kotlin classes, plus migration tests."""
+"""Run Kotlin parser, update protocol and data migration regression tests."""
 import os
 import pathlib
 import subprocess
@@ -19,8 +19,7 @@ if not (CLASSES/'com/local/pickup/SmsParser.class').exists():
 if not JSON.exists():
     raise SystemExit('Set JSON_TEST_JAR to org.json:json:20240303 JAR.')
 cp = os.pathsep.join(str(p) for p in [CLASSES, JSON, ANDROID, KOTLIN/'lib/kotlin-stdlib.jar'])
-subprocess.run([str(JAVA_HOME/'bin/javac.exe'), '-encoding', 'UTF-8', '-cp', cp, '-d', str(OUT), str(ROOT/'tests/ParserTest.java'), str(ROOT/'tests/UpdateProtocolTest.java')], check=True)
 java = str(JAVA_HOME/'bin/java.exe')
-subprocess.run([java, '-cp', str(KOTLIN/'lib/*'), 'org.jetbrains.kotlin.cli.jvm.K2JVMCompiler', '-kotlin-home', str(KOTLIN), '-no-reflect', '-jvm-target', '1.8', '-classpath', cp, '-d', str(OUT), str(ROOT/'tests/MigrationTest.kt')], check=True)
-for test in ['ParserTest', 'UpdateProtocolTest', 'MigrationTestKt']:
+subprocess.run([java, '-cp', str(KOTLIN/'lib/*'), 'org.jetbrains.kotlin.cli.jvm.K2JVMCompiler', '-kotlin-home', str(KOTLIN), '-no-reflect', '-jvm-target', '1.8', '-classpath', cp, '-d', str(OUT), *map(str, sorted((ROOT/'tests').glob('*.kt')))], check=True)
+for test in ['ParserTestKt', 'UpdateProtocolTestKt', 'MigrationTestKt']:
     subprocess.run([java, '-cp', str(OUT)+os.pathsep+cp, test], check=True)

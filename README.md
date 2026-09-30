@@ -37,9 +37,9 @@ APK 输出到 `deliverables/`。Android Studio 可导入 `app/` 的 Gradle 项�
 python app\test.py
 ```
 
-原 Java 测试保留为调用 Kotlin 的回归测试：17 项短信解析、15 项更新协议。Kotlin `MigrationTest.kt` 验证旧 JSON 字段、默认值、往返与无效记录拒绝。Android 应用使用系统 JSON API。
+测试全部使用 Kotlin：17 项短信解析、15 项更新协议。Kotlin `MigrationTest.kt` 验证旧 JSON 字段、默认值、往返与无效记录拒绝。Android 应用使用系统 JSON API。
 
-模拟器辅助工具为 `tests/runtime_qa.py`（支持 `ADB_PATH`、`ANDROID_SERIAL`）和 `FillText.java`，不进入安装包。API 26 已验证 Java 版本数据保留，以及 Kotlin 版新增、状态切换、粘贴识别、短信接收、通知、统计、深色模式和 JSON 备份，以及 Kotlin 更新模块从 GitHub 下载、校验、系统安装 0.3.0 后保留全部 5 条记录。
+API 26 已验证 Java 版本数据保留，以及 Kotlin 版新增、状态切换、粘贴识别、短信接收、通知、统计、深色模式和 JSON 备份，以及 Kotlin 更新模块从 GitHub 下载、校验、系统安装 0.3.0 后保留全部 5 条记录。
 
 ## 在线更新
 
