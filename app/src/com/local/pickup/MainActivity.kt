@@ -185,7 +185,7 @@ class MainActivity : Activity() {
             }
         setContentView(root)
         val header =
-            col().apply { setPadding(dp(20), dp(if (page == 0) 30 else 18), dp(20), dp(if (page == 0) 0 else 20)) }
+            col().apply { setPadding(dp(20), dp(if (page == 0) 4 else 18), dp(20), dp(if (page == 0) 0 else 20)) }
         root.addView(header)
         if (page == 0) homeHeader(header)
         else {
@@ -217,20 +217,20 @@ class MainActivity : Activity() {
                 contentDescription = "粘贴短信识别"
                 setOnClickListener { paste() }
             }
-            pasteBar.addView(icon(R.drawable.ic_paste, accent, "短信"), LinearLayout.LayoutParams(dp(42), dp(48)))
+            pasteBar.addView(icon(R.drawable.ic_paste, accent, "短信"), LinearLayout.LayoutParams(dp(42), dp(44)))
             pasteBar.addView(text("粘贴短信识别", 16, accent, true))
-            root.addView(pasteBar, LinearLayout.LayoutParams(-1, dp(44)).apply { setMargins(dp(16), dp(8), dp(16), dp(8)) })
+            root.addView(pasteBar, LinearLayout.LayoutParams(-1, dp(44)).apply { setMargins(dp(16), dp(4), dp(16), dp(4)) })
         }
         divider(root)
         val nav = row().apply { setBackgroundColor(paper); setPadding(dp(16), dp(3), dp(16), dp(3)) }
-        root.addView(nav, LinearLayout.LayoutParams(-1, dp(56)))
+        root.addView(nav, LinearLayout.LayoutParams(-1, dp(52)))
         val navIcons = intArrayOf(R.drawable.ic_parcel, R.drawable.ic_stats, R.drawable.ic_settings)
         arrayOf("包裹", "统计", "设置").forEachIndexed { index, label ->
             val color = if (index == page) accent else muted
             val tab = col().apply {
                 gravity = Gravity.CENTER
                 contentDescription = label
-                addView(icon(navIcons[index], color, label).apply { setPadding(dp(3), dp(3), dp(3), dp(3)) }, LinearLayout.LayoutParams(dp(34), dp(34)))
+                addView(icon(navIcons[index], color, label).apply { setPadding(dp(3), dp(3), dp(3), dp(3)) }, LinearLayout.LayoutParams(dp(30), dp(30)))
                 addView(text(label, 12, color, index == page).apply { gravity = Gravity.CENTER })
                 setOnClickListener { page = index; render() }
             }
@@ -242,17 +242,17 @@ class MainActivity : Activity() {
         val all = Store.load(this)
         val pending = all.count { it.completed == 0L }
         val title = row()
-        title.addView(text("取件助手", 30, ink, true), LinearLayout.LayoutParams(0, -2, 1f))
+        title.addView(text("取件助手", 26, ink, true).apply { includeFontPadding = false }, LinearLayout.LayoutParams(0, -2, 1f))
         title.addView(icon(R.drawable.ic_add, accent, "手动添加") { edit(null) }.apply { setPadding(dp(6), dp(6), dp(6), dp(6)) }, LinearLayout.LayoutParams(dp(48), dp(48)))
         header.addView(title)
-        space(header, 14)
+        space(header, 4)
         val tabs = row()
         repeat(2) { index ->
             val selected = filterTab == index
             val tab = col().apply {
                 gravity = Gravity.CENTER
-                addView(text(if (index == 0) "待取 ($pending)" else "已取 (${all.size - pending})", 20, if (selected) accent else muted, true).apply {
-                    gravity = Gravity.CENTER; setPadding(0, dp(8), 0, dp(10))
+                addView(text(if (index == 0) "待取 ($pending)" else "已取 (${all.size - pending})", 18, if (selected) accent else muted, true).apply {
+                    gravity = Gravity.CENTER; setPadding(0, dp(4), 0, dp(6)); includeFontPadding = false
                 })
                 addView(View(this@MainActivity).apply { background = shape(if (selected) accent else Color.TRANSPARENT, 2) }, LinearLayout.LayoutParams(dp(90), dp(2)))
                 setOnClickListener { filterTab = index; render() }
@@ -261,15 +261,15 @@ class MainActivity : Activity() {
         }
         header.addView(tabs)
         divider(header)
-        space(header, 14)
+        space(header, 6)
         val searchRow = row().apply { background = shape(if (dark) paper else 0xffe8f2f8.toInt(), 18) }
-        searchRow.addView(icon(R.drawable.ic_search, muted, "搜索"), LinearLayout.LayoutParams(dp(42), dp(46)))
+        searchRow.addView(icon(R.drawable.ic_search, muted, "搜索"), LinearLayout.LayoutParams(dp(42), dp(40)))
         val search = EditText(this).apply {
             setSingleLine(); textSize = 15f; setTextColor(ink); setHintTextColor(muted)
             hint = "搜索取件码、驿站、快递公司"
             setPadding(0, 0, dp(10), 0); background = null; setText(query)
         }
-        searchRow.addView(search, LinearLayout.LayoutParams(0, dp(46), 1f))
+        searchRow.addView(search, LinearLayout.LayoutParams(0, dp(40), 1f))
         header.addView(searchRow)
         watch(search) { query = it; renderList() }
         val controls = row()
@@ -287,7 +287,7 @@ class MainActivity : Activity() {
         controls.addView(control(if (carrierFilter == "全部") "筛选" else carrierFilter, muted) {
             AlertDialog.Builder(this).setTitle("快递公司筛选").setItems(withAll()) { _, index -> carrierFilter = withAll()[index]; render() }.show()
         })
-        header.addView(controls, LinearLayout.LayoutParams(-1, dp(46)))
+        header.addView(controls, LinearLayout.LayoutParams(-1, dp(40)))
     }
 
     private fun home() {
@@ -382,43 +382,45 @@ class MainActivity : Activity() {
             val time = if (p.completed == 0L) p.created else p.completed
             val day = dayFormat.format(Date(time))
             if (sort == 0 && day != lastDay) {
-                val group = row().apply { setPadding(0, dp(6), 0, dp(6)) }
-                group.addView(text(when (day) { today -> "今天"; yesterday -> "昨天"; else -> SimpleDateFormat("MM月dd日", Locale.CHINA).format(Date(time)) }, 21, ink, true))
+                val group = row().apply { setPadding(0, dp(4), 0, dp(4)) }
+                group.addView(text(when (day) { today -> "今天"; yesterday -> "昨天"; else -> SimpleDateFormat("MM月dd日", Locale.CHINA).format(Date(time)) }, 16, ink, true).apply { includeFontPadding = false })
                 if (day == today || day == yesterday) {
                     group.addView(text(SimpleDateFormat("MM月dd日", Locale.CHINA).format(Date(time)), 13, muted).apply { setPadding(dp(12), 0, 0, 0) })
                 }
                 listing.addView(group)
                 lastDay = day
             }
-            val item = row().apply { setPadding(0, dp(8), 0, dp(14)); contentDescription = "包裹详情 ${p.code}"; setOnClickListener { detail(p) } }
+            val item = row().apply { setPadding(0, dp(5), 0, dp(7)); contentDescription = "包裹详情 ${p.code}"; setOnClickListener { detail(p) } }
             val info = col()
             val codeRow = row()
-            codeRow.addView(text(p.code, if (p.code.length > 9) 23 else 30, if (p.completed == 0L) ink else muted, true).apply {
-                setSingleLine(); ellipsize = TextUtils.TruncateAt.END
+            codeRow.addView(text(p.code, if (p.code.length > 9) 23 else 28, if (p.completed == 0L) ink else muted, true).apply {
+                setSingleLine(); ellipsize = TextUtils.TruncateAt.END; includeFontPadding = false
                 contentDescription = "取件码 ${p.code}，点击复制"; setOnClickListener { copy(p.code) }
             }, LinearLayout.LayoutParams(0, -2, 1f))
             codeRow.addView(icon(R.drawable.ic_copy, accent, "复制取件码 ${p.code}") { copy(p.code) }.apply { setPadding(dp(11), dp(11), dp(11), dp(11)) }, LinearLayout.LayoutParams(dp(40), dp(40)))
             info.addView(codeRow)
-            space(info, 4)
+            space(info, 2)
             val detailRow = row()
             val badgeColor = when { p.carrier.contains("圆通") -> 0xff8054db.toInt(); p.carrier.contains("顺丰") -> 0xff282828.toInt(); p.carrier.contains("京东") -> 0xffeb363c.toInt(); else -> 0xff1677ff.toInt() }
-            detailRow.addView(text(p.carrier.take(2), 12, Color.WHITE, true).apply { gravity = Gravity.CENTER; background = shape(badgeColor, 7) }, LinearLayout.LayoutParams(dp(36), dp(32)))
-            val labels = col().apply { setPadding(dp(12), 0, dp(6), 0) }
-            labels.addView(text(p.station.ifEmpty { p.carrier }, 15, ink, true).apply { setSingleLine(); ellipsize = TextUtils.TruncateAt.END })
-            space(labels, 3)
-            labels.addView(text(if (p.station.isEmpty()) "未填写取件地点" else p.carrier, 12, muted).apply { setSingleLine(); ellipsize = TextUtils.TruncateAt.END })
-            detailRow.addView(labels, LinearLayout.LayoutParams(0, -2, 1f))
+            detailRow.addView(text(p.carrier.take(2), 11, Color.WHITE, true).apply { gravity = Gravity.CENTER; includeFontPadding = false; background = shape(badgeColor, 6) }, LinearLayout.LayoutParams(dp(30), dp(26)))
+            val summary = if (p.station.isEmpty()) p.carrier else if (p.station == p.carrier) p.station else "${p.station} · ${p.carrier}"
+            detailRow.addView(text(summary, 13, muted).apply {
+                setPadding(dp(8), 0, dp(4), 0)
+                includeFontPadding = false
+                setSingleLine(); ellipsize = TextUtils.TruncateAt.END
+                contentDescription = "驿站 ${p.station.ifEmpty { "未填写" }}，快递公司 ${p.carrier}"
+            }, LinearLayout.LayoutParams(0, -2, 1f))
             info.addView(detailRow)
             item.addView(info, LinearLayout.LayoutParams(0, -2, 1f))
-            item.addView(View(this).apply { setBackgroundColor(if (dark) 0xff2c3c4b.toInt() else 0xffeaf0f4.toInt()) }, LinearLayout.LayoutParams(dp(1), dp(52)).apply { leftMargin = dp(8); rightMargin = dp(6) })
+            item.addView(View(this).apply { setBackgroundColor(if (dark) 0xff2c3c4b.toInt() else 0xffeaf0f4.toInt()) }, LinearLayout.LayoutParams(dp(1), dp(42)).apply { leftMargin = dp(8); rightMargin = dp(6) })
             val mark = col().apply {
                 gravity = Gravity.CENTER
                 contentDescription = (if (p.completed == 0L) "标记已取 " else "恢复待取 ") + p.code
                 addView(icon(if (p.completed == 0L) R.drawable.ic_pending else R.drawable.ic_done, if (p.completed == 0L) muted else accent, "取件状态").apply { setPadding(dp(6), dp(6), dp(6), dp(6)) }, LinearLayout.LayoutParams(dp(40), dp(40)))
-                addView(text(if (p.completed == 0L) "标记已取" else "恢复待取", 12, muted))
+                addView(text(if (p.completed == 0L) "标记已取" else "恢复待取", 11, muted).apply { setSingleLine(); includeFontPadding = false })
                 setOnClickListener { status(p.id, p.completed == 0L) }
             }
-            item.addView(mark, LinearLayout.LayoutParams(dp(58), dp(70)))
+            item.addView(mark, LinearLayout.LayoutParams(dp(58), dp(60)))
             listing.addView(item)
             divider(listing)
         }
