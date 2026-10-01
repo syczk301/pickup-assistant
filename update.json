@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "packageName": "com.local.pickup",
+  "versionCode": 8,
+  "versionName": "0.4.3",
+  "minSdk": 26,
+  "apkUrl": "https://github.com/syczk301/pickup-assistant/releases/download/v0.4.3/pickup-assistant-0.4.3.apk",
+  "sizeBytes": 2467128,
+  "sha256": "72141230a0e9e2602ecf98221442e09bb11136c37cc1e99f2a86af8cc033680a",
+  "releaseNotes": "更新检查改用 GitHub API 直读版本文件，增加 Raw、CDN 和 Release 备用通道。兼容旧版保存的内置更新地址，显示可读的超时和网络错误。"
+}

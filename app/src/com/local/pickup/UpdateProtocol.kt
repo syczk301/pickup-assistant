@@ -7,6 +7,40 @@ import java.util.Locale
 import org.json.*
 
 object UpdateProtocol {
+    const val LEGACY_SOURCE = "https://github.com/syczk301/pickup-assistant/releases/latest/download/update.json"
+    const val API_SOURCE = "https://api.github.com/repos/syczk301/pickup-assistant/contents/update.json?ref=main"
+    val SOURCES = listOf(
+        API_SOURCE,
+        "https://raw.githubusercontent.com/syczk301/pickup-assistant/main/update.json",
+        "https://cdn.jsdelivr.net/gh/syczk301/pickup-assistant@main/update.json",
+        LEGACY_SOURCE,
+    )
+
+    // Custom sources remain explicit; old built-in addresses migrate to the API route.
+    fun sourceCandidates(stored: String): List<String> =
+        if (stored.isBlank() || stored in SOURCES) SOURCES else listOf(stored)
+
+    fun fetchAny(
+        sources: List<String>,
+        pkg: String,
+        request: (String, String) -> Release = ::fetch,
+    ): Release {
+        var failure: IOException? = null
+        for (source in sources.distinct()) {
+            if (Thread.currentThread().isInterrupted) throw InterruptedIOException("更新检查已取消")
+            try { return request(source, pkg) }
+            catch (e: IOException) { failure = e }
+        }
+        throw IOException(failureMessage(failure), failure)
+    }
+
+    fun failureMessage(error: Throwable?): String = when (error) {
+        is SocketTimeoutException -> "连接更新服务器超时，请切换 Wi-Fi 或移动数据后重试。"
+        is UnknownHostException -> "无法连接更新服务器，请检查网络连接后重试。"
+        is javax.net.ssl.SSLException -> "无法建立安全连接，请检查手机日期和网络后重试。"
+        else -> error?.message?.takeIf { it.isNotBlank() } ?: "暂时无法连接更新服务器，请稍后重试。"
+    }
+
     const val MAX_APK = 200L * 1024 * 1024
 
     data class Release(
@@ -75,10 +109,13 @@ object UpdateProtocol {
         var url = https(source)
         repeat(6) {
             val connection = url.openConnection() as HttpURLConnection
-            connection.connectTimeout = 15000
-            connection.readTimeout = 20000
+            connection.connectTimeout = 6000
+            connection.readTimeout = 8000
             connection.instanceFollowRedirects = false
-            connection.setRequestProperty("Accept", "application/json")
+            connection.useCaches = false
+            connection.setRequestProperty("Accept", "application/vnd.github.raw+json, application/json")
+            connection.setRequestProperty("User-Agent", "PickupAssistant-Android")
+            connection.setRequestProperty("Cache-Control", "no-cache")
             try {
                 val status = connection.responseCode
                 if (status in 300..399) {

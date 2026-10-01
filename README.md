@@ -1,6 +1,6 @@
 # 取件助手
 
-原生 Kotlin Android 应用，包名 `com.local.pickup`，最低 Android 8.0。当前版本 0.4.2，版本号 7，MIT 许可证。
+原生 Kotlin Android 应用，包名 `com.local.pickup`，最低 Android 8.0。当前版本 0.4.3，版本号 8，MIT 许可证。
 
 应用的 11 个模块均使用 Kotlin；短信和取件记录在本机处理。支持短信提取、粘贴识别、记录管理、统计、提醒、小组件、JSON 备份和 GitHub 在线更新。
 
@@ -16,7 +16,7 @@
 
 ## 测试
 
-`tests/ParserTest.kt` 和 `UpdateProtocolTest.kt` 分别覆盖 17 项短信解析和 15 项更新协议检查。`tests/MigrationTest.kt` 验证旧版 JSON 字段、默认值、往返和无效记录拒绝。测试需要先构建，再设置 `JSON_TEST_JAR` 为 org.json:json:20240303 的 JAR 路径，运行 `python app\test.py`。Android 应用使用系统 JSON API。
+`tests/ParserTest.kt` 和 `UpdateProtocolTest.kt` 分别覆盖 17 项短信解析和 25 项更新协议检查。`tests/MigrationTest.kt` 验证旧版 JSON 字段、默认值、往返和无效记录拒绝。测试需要先构建，再设置 `JSON_TEST_JAR` 为 org.json:json:20240303 的 JAR 路径，运行 `python app\test.py`。Android 应用使用系统 JSON API。
 
 测试全部使用 Kotlin。旧版模拟器操作和中文输入辅助脚本已移除。
 
@@ -24,7 +24,7 @@
 
 源码和发布仓库：https://github.com/syczk301/pickup-assistant
 
-默认地址：https://github.com/syczk301/pickup-assistant/releases/latest/download/update.json
+默认通过 GitHub API 直接读取根目录 `update.json`，失败时依次尝试 Raw、jsDelivr 和 Release 入口。旧版保存的内置地址自动走这些通道，自定义地址保持不变。发布新版时需同步根目录版本文件与 Release 资产，确保版本号、大小和 SHA-256 一致。
 
 在设置中检查并下载新版本，安装前校验大小、SHA-256、包名、版本和签名，再由安卓系统确认。原 Java 版本的包名、签名、SharedPreferences 名称和 JSON 格式保持兼容。
 
@@ -37,3 +37,5 @@
 0.4.1 压缩首页顶部留白、标签/搜索区域和底部间距，将驿站与快递公司合并为单行。相同 360×800dp 测试屏幕由完整显示 3 条提升到 5 条；实际数量取决于字体、日期分组和屏幕尺寸。
 
 0.4.2 将“粘贴短信识别”移到首页右上角，移除底部重复入口，释放清单空间。手动添加入口位于搜索框下方的工具栏。
+
+0.4.3 修复更新检查单一 Release 入口超时的问题，增加备用通道、缩短单次网络等待并显示可读的网络错误。APK 安装前仍校验大小、SHA-256、包名、版本和签名。

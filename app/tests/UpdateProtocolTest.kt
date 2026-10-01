@@ -38,6 +38,32 @@ fun main() {
     invalid.forEach { (key, value) ->
         rejected { UpdateProtocol.parse(valid().put(key, value).toString(), "com.local.pickup") }
     }
+    check(UpdateProtocol.sourceCandidates(UpdateProtocol.LEGACY_SOURCE).first() == UpdateProtocol.API_SOURCE)
+    check(UpdateProtocol.sourceCandidates("") == UpdateProtocol.SOURCES)
+    check(UpdateProtocol.sourceCandidates("https://example.com/custom.json") == listOf("https://example.com/custom.json"))
+    count += 3
+    val attempts = mutableListOf<String>()
+    val fallback = UpdateProtocol.fetchAny(listOf("primary", "backup", "unused"), "com.local.pickup") { url, pkg ->
+        check(pkg == "com.local.pickup")
+        attempts.add(url)
+        if (url == "primary") throw java.net.SocketTimeoutException("timeout")
+        release
+    }
+    check(fallback == release && attempts == listOf("primary", "backup"))
+    count++
+    attempts.clear()
+    UpdateProtocol.fetchAny(listOf("ok", "unused"), "com.local.pickup") { url, _ -> attempts.add(url); release }
+    check(attempts == listOf("ok"))
+    count++
+    rejected { UpdateProtocol.fetchAny(listOf("fail"), "com.local.pickup") { _, _ -> throw java.net.SocketTimeoutException("timeout") } }
+    check(UpdateProtocol.failureMessage(java.net.SocketTimeoutException("timeout")).contains("超时"))
+    check(UpdateProtocol.failureMessage(java.net.UnknownHostException()).contains("网络"))
+    check(UpdateProtocol.failureMessage(javax.net.ssl.SSLException("bad")).contains("安全连接"))
+    count += 3
+    Thread.currentThread().interrupt()
+    try { rejected { UpdateProtocol.fetchAny(listOf("unused"), "com.local.pickup") { _, _ -> error("Cancelled request ran") } } }
+    finally { Thread.interrupted() }
+
     val file = Files.createTempFile("update-test-", ".apk").toFile()
     try {
         file.writeBytes(byteArrayOf(97, 98, 99))

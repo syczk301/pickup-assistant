@@ -12,8 +12,7 @@ import java.util.concurrent.Executors
 
 class UpdateController(private val activity: Activity) {
     companion object {
-        const val DEFAULT_SOURCE =
-            "https://github.com/syczk301/pickup-assistant/releases/latest/download/update.json"
+        const val DEFAULT_SOURCE = UpdateProtocol.API_SOURCE
     }
 
     private val context = activity.applicationContext
@@ -114,7 +113,7 @@ class UpdateController(private val activity: Activity) {
         if (manual) Toast.makeText(activity, "正在检查更新…", Toast.LENGTH_SHORT).show()
         worker.execute {
             try {
-                val release = UpdateProtocol.fetch(url, context.packageName)
+                val release = UpdateProtocol.fetchAny(UpdateProtocol.sourceCandidates(url), context.packageName)
                 ui {
                     checking = false
                     if (url == source())
@@ -150,7 +149,7 @@ class UpdateController(private val activity: Activity) {
             } catch (e: Exception) {
                 ui {
                     checking = false
-                    if (manual) message("检查更新失败", e.message ?: "请检查网络后重试")
+                    if (manual) message("检查更新失败", UpdateProtocol.failureMessage(e))
                 }
             }
         }
