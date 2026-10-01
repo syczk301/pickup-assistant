@@ -300,7 +300,7 @@ class MainActivity : Activity() {
         renderList()
         if (checkSelfPermission(Manifest.permission.RECEIVE_SMS) != PackageManager.PERMISSION_GRANTED) {
             space(body, 16)
-            body.addView(action("开启短信权限 · 自动提取新取件码", ::permissions))
+            body.addView(action("开启短信权限 · 自动提取新取件码", ::requestSmsPermission))
         }
         if (visible().isNotEmpty()) {
             space(body, 12)
@@ -727,25 +727,25 @@ class MainActivity : Activity() {
                 checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) !=
                     PackageManager.PERMISSION_GRANTED
         )
-            requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 10)
+            requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 12)
     }
 
     private fun settings() {
         heading("自动识别与提醒")
         val c = card(body)
         toggle(c, "自动识别新短信", "需要接收短信权限", "auto_sms", true) {
-            if (Store.prefs(this).getBoolean("auto_sms", true)) permissions()
+            if (Store.prefs(this).getBoolean("auto_sms", true)) requestSmsPermission()
         }
         settingRow(
             c,
-            "短信与通知权限",
+            "自动识别权限",
             if (
                 checkSelfPermission(Manifest.permission.RECEIVE_SMS) ==
                     PackageManager.PERMISSION_GRANTED
             )
                 "接收短信权限已开启"
             else "点击授权，开启自动提取",
-            ::permissions,
+            ::requestSmsPermission,
         )
         settingRow(c, "扫描最近 30 天短信", if (scanning) "正在扫描…" else "仅识别快递相关短信，重复记录自动跳过", ::scan)
         toggle(c, "新包裹通知", "识别成功后发送取件提醒", "notify", true) {
@@ -805,7 +805,7 @@ class MainActivity : Activity() {
         settingRow(data, "桌面小组件", "长按桌面 → 小组件 → 取件助手") {
             AlertDialog.Builder(this)
                 .setTitle("桌面小组件")
-                .setMessage("在桌面长按空白处，找到取件助手小组件。小组件显示待取数量，并根据高度展示 1 至 3 个取件码；点击打开应用。")
+                .setMessage("在桌面长按空白处，找到取件助手小组件。小组件显示待取数量，常规双栏尺寸展示 6 个取件码；显示数量随高度和字体大小调整，点击打开应用。")
                 .setPositiveButton("知道了", null)
                 .show()
         }
@@ -822,26 +822,18 @@ class MainActivity : Activity() {
         about.addView(text("短信识别、取件管理与本地备份。短信和取件记录在本机处理，不上传。", 13, muted))
     }
 
-    private fun permissions() {
-        val missing =
-            mutableListOf(Manifest.permission.RECEIVE_SMS, Manifest.permission.READ_SMS)
-                .filter { checkSelfPermission(it) != PackageManager.PERMISSION_GRANTED }
-                .toMutableList()
-        if (
-            Build.VERSION.SDK_INT >= 33 &&
-                checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) !=
-                    PackageManager.PERMISSION_GRANTED
-        )
-            missing.add(Manifest.permission.POST_NOTIFICATIONS)
-        if (missing.isEmpty()) {
-            toast("短信及通知权限已开启")
+    private fun requestSmsPermission() {
+        if (checkSelfPermission(Manifest.permission.RECEIVE_SMS) == PackageManager.PERMISSION_GRANTED) {
+            toast("接收短信权限已开启")
             return
         }
         AlertDialog.Builder(this)
-            .setTitle("开启本地短信识别")
-            .setMessage("接收短信权限用于提取新快递短信的取件码。读取短信权限用于手动扫描历史短信。短信只在设备上处理，不会上传。拒绝权限后仍可手动添加或粘贴识别。")
+            .setTitle("开启新短信识别")
+            .setMessage("接收短信权限用于提取新收到的快递短信取件码。短信只在设备上处理，不会上传。拒绝后仍可手动添加或粘贴识别。")
             .setNegativeButton("暂不开启", null)
-            .setPositiveButton("继续") { _, _ -> requestPermissions(missing.toTypedArray(), 10) }
+            .setPositiveButton("继续") { _, _ ->
+                requestPermissions(arrayOf(Manifest.permission.RECEIVE_SMS), 10)
+            }
             .show()
     }
 
