@@ -5,6 +5,8 @@ import android.content.*
 import android.os.Bundle
 import android.view.View
 import android.widget.RemoteViews
+import kotlin.math.floor
+import kotlin.math.ceil
 
 class PickupWidget : AppWidgetProvider() {
     override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) {
@@ -19,24 +21,36 @@ class PickupWidget : AppWidgetProvider() {
         // RemoteViews uses only platform widgets so launcher hosts can inflate it safely.
         fun views(context: Context, options: Bundle): RemoteViews {
             val pending = Store.load(context).filter { it.completed == 0L }.sortedByDescending { it.created }
-            val height = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 180)
-            val capacity = when { height >= 280 -> 3; height >= 210 -> 2; else -> 1 }
+            val height = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 160)
+            val fontScale = context.resources.configuration.fontScale
+            val rowHeight = 32f * fontScale
+            val headerHeight = 18f * fontScale
+            val withoutFooter = floor((height - 20f - headerHeight) / rowHeight).toInt().coerceIn(1, 8)
+            val capacity = if (pending.size > withoutFooter) {
+                floor((height - 20f - headerHeight - 16f * fontScale) / rowHeight).toInt().coerceIn(1, 8)
+            } else withoutFooter
             val result = RemoteViews(context.packageName, R.layout.widget)
             result.setTextViewText(R.id.widget_title, "${pending.size} 件待取")
+            val scaledDensity = context.resources.displayMetrics.scaledDensity
+            result.setInt(R.id.widget_title, "setMinimumHeight", ceil(18f * scaledDensity).toInt())
+            result.setInt(R.id.widget_more, "setMinimumHeight", ceil(16f * scaledDensity).toInt())
             result.setViewVisibility(R.id.widget_empty, if (pending.isEmpty()) View.VISIBLE else View.GONE)
-            val rows = intArrayOf(R.id.widget_row1, R.id.widget_row2, R.id.widget_row3)
-            val codes = intArrayOf(R.id.widget_code1, R.id.widget_code2, R.id.widget_code3)
-            val meta = intArrayOf(R.id.widget_meta1, R.id.widget_meta2, R.id.widget_meta3)
+            val rows = intArrayOf(R.id.widget_row1, R.id.widget_row2, R.id.widget_row3, R.id.widget_row4, R.id.widget_row5, R.id.widget_row6, R.id.widget_row7, R.id.widget_row8)
+            val codes = intArrayOf(R.id.widget_code1, R.id.widget_code2, R.id.widget_code3, R.id.widget_code4, R.id.widget_code5, R.id.widget_code6, R.id.widget_code7, R.id.widget_code8)
+            val meta = intArrayOf(R.id.widget_meta1, R.id.widget_meta2, R.id.widget_meta3, R.id.widget_meta4, R.id.widget_meta5, R.id.widget_meta6, R.id.widget_meta7, R.id.widget_meta8)
             rows.forEachIndexed { index, row ->
                 val parcel = pending.getOrNull(index)
+                result.setInt(row, "setMinimumHeight", ceil(32f * scaledDensity).toInt())
                 result.setViewVisibility(row, if (parcel != null && index < capacity) View.VISIBLE else View.GONE)
                 if (parcel != null) {
                     result.setTextViewText(codes[index], parcel.code)
+                    result.setTextViewTextSize(codes[index], android.util.TypedValue.COMPLEX_UNIT_SP, if (parcel.code.length > 9) 16f else 20f)
                     result.setTextViewText(meta[index], if (parcel.station.isEmpty()) parcel.carrier else "${parcel.station} · ${parcel.carrier}")
                 }
             }
             val remaining = (pending.size - capacity).coerceAtLeast(0)
-            result.setTextViewText(R.id.widget_more, if (remaining > 0) "还有 $remaining 件 · 点击查看" else "点击打开取件助手")
+            result.setViewVisibility(R.id.widget_more, if (remaining > 0) View.VISIBLE else View.GONE)
+            result.setTextViewText(R.id.widget_more, "还有 $remaining 件 · 点击查看")
             result.setOnClickPendingIntent(R.id.widget_root, ReminderReceiver.open(context))
             return result
         }

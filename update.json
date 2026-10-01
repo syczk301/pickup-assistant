@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
   "packageName": "com.local.pickup",
-  "versionCode": 9,
-  "versionName": "0.4.4",
+  "versionCode": 10,
+  "versionName": "0.4.5",
   "minSdk": 26,
-  "apkUrl": "https://github.com/syczk301/pickup-assistant/releases/download/v0.4.4/pickup-assistant-0.4.4.apk",
-  "sizeBytes": 2467128,
-  "sha256": "270bed6b430a3093288cf6c8cb67365246f9067bd3b47cb0d7de9e8a9f460f35",
-  "releaseNotes": "修正包裹列表中“标记已取”和“恢复待取”的图标与文字对齐，统一水平居中。保留原有点击区域、状态切换和在线更新功能。"
+  "apkUrl": "https://github.com/syczk301/pickup-assistant/releases/download/v0.4.5/pickup-assistant-0.4.5.apk",
+  "sizeBytes": 2471224,
+  "sha256": "c7894c38f8f76d797a0952cdd1f687d1a453588f76db66c5bb2f513fa8cf6aaf",
+  "releaseNotes": "小组件移除应用标题，取件码与驿站信息改为紧凑单行；按高度和字体大小自动显示更多记录，常规160dp高度显示3条，拉高后最多显示8条。保留点击打开应用与取件状态自动刷新。"
 }
