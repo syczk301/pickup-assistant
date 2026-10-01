@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
   "packageName": "com.local.pickup",
-  "versionCode": 12,
-  "versionName": "0.4.7",
+  "versionCode": 13,
+  "versionName": "0.4.8",
   "minSdk": 26,
-  "apkUrl": "https://github.com/syczk301/pickup-assistant/releases/download/v0.4.7/pickup-assistant-0.4.7.apk",
+  "apkUrl": "https://github.com/syczk301/pickup-assistant/releases/download/v0.4.8/pickup-assistant-0.4.8.apk",
   "sizeBytes": 2475482,
-  "sha256": "ed72bc5aa361fefc0f4d1caea796914c9500ec684ae61c44319af0dedfd7cee2",
-  "releaseNotes": "精简授权流程：开启自动识别只申请接收短信，历史扫描在点击时才申请读取短信；通知权限只在开启新包裹通知或每日提醒时申请。不再一起申请短信读取和通知权限，拒绝后仍可手动添加或粘贴识别。保留历史扫描、提醒、在线更新与原有取件记录。"
+  "sha256": "3a9c7a767921c9840dbb6b8a1e001ef7afce908f73bd80598a1f1ea0234eba91",
+  "releaseNotes": "优化小组件真机显示：记录行均分可用高度，消除底部大块空白；四条记录时放大取件码与驿站文字，保留双栏六条和拉高显示更多。按实际文字宽度适配长取件码，并检查中文字体与系统大字体的高度，避免裁切。"
 }
