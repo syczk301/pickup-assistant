@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
   "packageName": "com.local.pickup",
-  "versionCode": 10,
-  "versionName": "0.4.5",
+  "versionCode": 11,
+  "versionName": "0.4.6",
   "minSdk": 26,
-  "apkUrl": "https://github.com/syczk301/pickup-assistant/releases/download/v0.4.5/pickup-assistant-0.4.5.apk",
-  "sizeBytes": 2471224,
-  "sha256": "c7894c38f8f76d797a0952cdd1f687d1a453588f76db66c5bb2f513fa8cf6aaf",
-  "releaseNotes": "小组件移除应用标题，取件码与驿站信息改为紧凑单行；按高度和字体大小自动显示更多记录，常规160dp高度显示3条，拉高后最多显示8条。保留点击打开应用与取件状态自动刷新。"
+  "apkUrl": "https://github.com/syczk301/pickup-assistant/releases/download/v0.4.6/pickup-assistant-0.4.6.apk",
+  "sizeBytes": 2475482,
+  "sha256": "31eedc16e74fc8901d61c10cd960dbc51ebfb88cfcc01c846d27f2e7df5d580e",
+  "releaseNotes": "小组件改为白色双栏清单：常规300×160dp尺寸显示六条，每栏三条。数量标签、细分隔线和取件码/驿站文字分层，底部查看入口固定；小字颜色加深。支持拉高显示更多、窄尺寸单栏、放大字体适配和取件后自动刷新。"
 }
