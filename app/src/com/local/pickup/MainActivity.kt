@@ -381,17 +381,41 @@ class MainActivity : Activity() {
         val today = dayFormat.format(now.time)
         now.add(Calendar.DAY_OF_YEAR, -1)
         val yesterday = dayFormat.format(now.time)
+        val dayCounts = shown.groupingBy {
+            dayFormat.format(Date(if (it.completed == 0L) it.created else it.completed))
+        }.eachCount()
+        val currentYear = Calendar.getInstance().get(Calendar.YEAR)
         var lastDay = ""
         for (p in shown) {
             val time = if (p.completed == 0L) p.created else p.completed
             val day = dayFormat.format(Date(time))
             if (sort == 0 && day != lastDay) {
-                val group = row().apply { setPadding(0, dp(4), 0, dp(4)) }
-                group.addView(text(when (day) { today -> "今天"; yesterday -> "昨天"; else -> SimpleDateFormat("MM月dd日", Locale.CHINA).format(Date(time)) }, 16, ink, true).apply { includeFontPadding = false })
-                if (day == today || day == yesterday) {
-                    group.addView(text(SimpleDateFormat("MM月dd日", Locale.CHINA).format(Date(time)), 13, muted).apply { setPadding(dp(12), 0, 0, 0) })
+                val parcelYear = Calendar.getInstance().apply { timeInMillis = time }.get(Calendar.YEAR)
+                val calendarDate = SimpleDateFormat(if (parcelYear == currentYear) "MM月dd日" else "yyyy年MM月dd日", Locale.CHINA).format(Date(time))
+                val label = when (day) { today -> "今天"; yesterday -> "昨天"; else -> calendarDate }
+                val count = dayCounts.getValue(day)
+                val group = row().apply {
+                    setPadding(dp(10), dp(6), dp(10), dp(6))
+                    background = shape(if (dark) 0xff203e54.toInt() else 0xffeaf3ff.toInt(), 8)
+                    contentDescription = "日期分组 $label，$calendarDate，$count 件${if (filterTab == 0) "待取" else "已取"}包裹"
                 }
-                listing.addView(group)
+                group.addView(View(this).apply { background = shape(accent, 2) }, LinearLayout.LayoutParams(dp(3), dp(18)).apply { rightMargin = dp(8) })
+                group.addView(text(label, 17, if (dark) accent else 0xff1265d6.toInt(), true).apply {
+                    includeFontPadding = false
+                    setSingleLine()
+                    ellipsize = TextUtils.TruncateAt.END
+                }, LinearLayout.LayoutParams(0, -2, 1f))
+                if (day == today || day == yesterday) {
+                    group.addView(text(calendarDate, 12, if (dark) muted else 0xff526a83.toInt()).apply {
+                        includeFontPadding = false
+                        setPadding(dp(6), 0, dp(10), 0)
+                    })
+                }
+                group.addView(text("$count 件", 12, if (dark) muted else 0xff526a83.toInt(), true).apply { includeFontPadding = false })
+                listing.addView(group, LinearLayout.LayoutParams(-1, -2).apply {
+                    topMargin = dp(if (lastDay.isEmpty()) 2 else 10)
+                    bottomMargin = dp(4)
+                })
                 lastDay = day
             }
             val item = row().apply { setPadding(0, dp(5), 0, dp(7)); contentDescription = "包裹详情 ${p.code}"; setOnClickListener { detail(p) } }

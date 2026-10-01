@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
   "packageName": "com.local.pickup",
-  "versionCode": 13,
-  "versionName": "0.4.8",
+  "versionCode": 14,
+  "versionName": "0.4.9",
   "minSdk": 26,
-  "apkUrl": "https://github.com/syczk301/pickup-assistant/releases/download/v0.4.8/pickup-assistant-0.4.8.apk",
-  "sizeBytes": 2475482,
-  "sha256": "3a9c7a767921c9840dbb6b8a1e001ef7afce908f73bd80598a1f1ea0234eba91",
-  "releaseNotes": "优化小组件真机显示：记录行均分可用高度，消除底部大块空白；四条记录时放大取件码与驿站文字，保留双栏六条和拉高显示更多。按实际文字宽度适配长取件码，并检查中文字体与系统大字体的高度，避免裁切。"
+  "apkUrl": "https://github.com/syczk301/pickup-assistant/releases/download/v0.4.9/pickup-assistant-0.4.9.apk",
+  "sizeBytes": 2479578,
+  "sha256": "b5676a139404793347631ec77962e9bb545b5ba97516e271b39d5eaa8939841d",
+  "releaseNotes": "强化包裹清单的日期区分：浅蓝分组背景、蓝色竖线、加粗日期和组间距，显示每个日期的包裹数量；今天和昨天同时显示具体日期，跨年记录显示年份。待取和已取清单均适配深色模式，保留搜索、排序、筛选及原有记录。"
 }
