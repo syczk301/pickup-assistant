@@ -420,8 +420,12 @@ class MainActivity : Activity() {
             val mark = col().apply {
                 gravity = Gravity.CENTER
                 contentDescription = (if (p.completed == 0L) "标记已取 " else "恢复待取 ") + p.code
-                addView(icon(if (p.completed == 0L) R.drawable.ic_pending else R.drawable.ic_done, if (p.completed == 0L) muted else accent, "取件状态").apply { setPadding(dp(6), dp(6), dp(6), dp(6)) }, LinearLayout.LayoutParams(dp(40), dp(40)))
-                addView(text(if (p.completed == 0L) "标记已取" else "恢复待取", 11, muted).apply { setSingleLine(); includeFontPadding = false })
+                addView(icon(if (p.completed == 0L) R.drawable.ic_pending else R.drawable.ic_done, if (p.completed == 0L) muted else accent, "取件状态").apply { setPadding(dp(6), dp(6), dp(6), dp(6)) }, LinearLayout.LayoutParams(dp(40), dp(40)).apply { gravity = Gravity.CENTER_HORIZONTAL })
+                addView(text(if (p.completed == 0L) "标记已取" else "恢复待取", 11, muted).apply {
+                    gravity = Gravity.CENTER
+                    setSingleLine()
+                    includeFontPadding = false
+                }, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT))
                 setOnClickListener { status(p.id, p.completed == 0L) }
             }
             item.addView(mark, LinearLayout.LayoutParams(dp(58), dp(60)))

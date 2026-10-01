@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
   "packageName": "com.local.pickup",
-  "versionCode": 8,
-  "versionName": "0.4.3",
+  "versionCode": 9,
+  "versionName": "0.4.4",
   "minSdk": 26,
-  "apkUrl": "https://github.com/syczk301/pickup-assistant/releases/download/v0.4.3/pickup-assistant-0.4.3.apk",
+  "apkUrl": "https://github.com/syczk301/pickup-assistant/releases/download/v0.4.4/pickup-assistant-0.4.4.apk",
   "sizeBytes": 2467128,
-  "sha256": "72141230a0e9e2602ecf98221442e09bb11136c37cc1e99f2a86af8cc033680a",
-  "releaseNotes": "更新检查改用 GitHub API 直读版本文件，增加 Raw、CDN 和 Release 备用通道。兼容旧版保存的内置更新地址，显示可读的超时和网络错误。"
+  "sha256": "270bed6b430a3093288cf6c8cb67365246f9067bd3b47cb0d7de9e8a9f460f35",
+  "releaseNotes": "修正包裹列表中“标记已取”和“恢复待取”的图标与文字对齐，统一水平居中。保留原有点击区域、状态切换和在线更新功能。"
 }
