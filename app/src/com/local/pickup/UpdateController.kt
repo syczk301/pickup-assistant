@@ -20,7 +20,7 @@ class UpdateController(private val activity: Activity) {
     private val worker = Executors.newSingleThreadExecutor()
     private var startingDownload = false
     private var downloadGeneration = 0
-    private var progressDialog: AlertDialog? = null
+    private var progressDialog: UpdatePanel? = null
     private var visible = false
     private val deferredUi = mutableListOf<() -> Unit>()
     private var checking = false
@@ -48,6 +48,7 @@ class UpdateController(private val activity: Activity) {
 
     fun close() {
         closed = true
+        UpdatePanel.close(activity)
         deferredUi.clear()
         startingDownload = false
         downloadGeneration++
@@ -67,7 +68,7 @@ class UpdateController(private val activity: Activity) {
 
     private fun message(title: String, message: String?) {
         if (live())
-            AppDialogs.Builder(activity)
+            UpdatePanel.Builder(activity)
                 .setTitle(title)
                 .setMessage(message)
                 .setPositiveButton("知道了", null)
@@ -96,6 +97,8 @@ class UpdateController(private val activity: Activity) {
     }
 
     fun pause() { visible = false; progressDialog?.dismiss() }
+
+    fun dismissPanel() = UpdatePanel.dismissTop(activity)
 
     fun resume() {
         visible = true
@@ -160,7 +163,7 @@ class UpdateController(private val activity: Activity) {
                                     .edit()
                                     .putInt("update_prompted", release.code)
                                     .apply()
-                                AppDialogs.Builder(activity)
+                                UpdatePanel.Builder(activity)
                                     .setTitle("发现新版本 ${release.name}")
                                     .setMessage(
                                         release.notes.ifEmpty { "有新版本可用。" } +
@@ -243,7 +246,7 @@ class UpdateController(private val activity: Activity) {
     private fun progress() {
         if (!live() || progressDialog?.isShowing == true) return
         val dialog =
-            AppDialogs.Builder(activity)
+            UpdatePanel.Builder(activity)
                 .setTitle("下载更新")
                 .setMessage("正在下载，完成后会校验安装包。")
                 .setNegativeButton("取消下载") { _, _ -> cancelDownload() }
@@ -344,7 +347,7 @@ class UpdateController(private val activity: Activity) {
             if (!manual && Store.prefs(context).getInt("update_ready_prompted", 0) == release.code)
                 return
             Store.prefs(context).edit().putInt("update_ready_prompted", release.code).apply()
-            AppDialogs.Builder(activity)
+            UpdatePanel.Builder(activity)
                 .setTitle("更新已准备好")
                 .setMessage("取件助手 ${release.name} 已完成校验。安装将保留已有取件记录。")
                 .setNegativeButton("稍后", null)
@@ -357,7 +360,7 @@ class UpdateController(private val activity: Activity) {
 
     private fun install() {
         if (!activity.packageManager.canRequestPackageInstalls()) {
-            AppDialogs.Builder(activity)
+            UpdatePanel.Builder(activity)
                 .setTitle("允许安装更新")
                 .setMessage("请在接下来的系统设置中允许取件助手安装应用，返回后继续安装。")
                 .setNegativeButton("取消", null)

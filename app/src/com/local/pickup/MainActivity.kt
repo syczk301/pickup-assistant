@@ -860,6 +860,11 @@ class MainActivity : Activity() {
         return content
     }
 
+    @Deprecated("Legacy Android back navigation")
+    override fun onBackPressed() {
+        if (!::updates.isInitialized || !updates.dismissPanel()) super.onBackPressed()
+    }
+
     private fun settings() {
         val prefs = Store.prefs(this)
         val c = settingsGroup("sms", "短信识别") {

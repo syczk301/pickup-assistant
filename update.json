@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
   "packageName": "com.local.pickup",
-  "versionCode": 17,
-  "versionName": "0.5.2",
+  "versionCode": 18,
+  "versionName": "0.5.3",
   "minSdk": 26,
-  "apkUrl": "https://github.com/syczk301/pickup-assistant/releases/download/v0.5.2/pickup-assistant-0.5.2.apk",
-  "sizeBytes": 2524777,
-  "sha256": "6183c73f6c245802013e1596def4b9fb87670411a5ec46be734e569ef34b3c08",
-  "releaseNotes": "设置页按短信识别、通知与提醒、显示与数据、应用更新、关于五组折叠，默认收起，标题显示开关及版本摘要。展开后可操作原有选项，开关变化即时更新摘要，切换页面和深浅色模式保留展开状态。未新增权限。安卓原生界面已验证各组展开收起、状态摘要和配置重建。"
+  "apkUrl": "https://github.com/syczk301/pickup-assistant/releases/download/v0.5.3/pickup-assistant-0.5.3.apk",
+  "sizeBytes": 2541161,
+  "sha256": "ebcc290639b5b98c6c45933cf0f2a39c50f8ccaef1ce866786f20b896574dfa1",
+  "releaseNotes": "更新提示、下载进度和更新结果改为页面内浮层，避免独立系统弹窗出现后消失的问题。仅通过按钮或返回键关闭，支持长说明滚动和大字体按钮竖排。保留后台下载与完整安装包校验，设置折叠保持不变。安卓环境已验证连续检查、前后台切换、外侧触摸、取消下载及完整下载校验。"
 }
