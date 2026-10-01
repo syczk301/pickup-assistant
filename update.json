@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
   "packageName": "com.local.pickup",
-  "versionCode": 14,
-  "versionName": "0.4.9",
+  "versionCode": 15,
+  "versionName": "0.5.0",
   "minSdk": 26,
-  "apkUrl": "https://github.com/syczk301/pickup-assistant/releases/download/v0.4.9/pickup-assistant-0.4.9.apk",
-  "sizeBytes": 2479578,
-  "sha256": "b5676a139404793347631ec77962e9bb545b5ba97516e271b39d5eaa8939841d",
-  "releaseNotes": "强化包裹清单的日期区分：浅蓝分组背景、蓝色竖线、加粗日期和组间距，显示每个日期的包裹数量；今天和昨天同时显示具体日期，跨年记录显示年份。待取和已取清单均适配深色模式，保留搜索、排序、筛选及原有记录。"
+  "apkUrl": "https://github.com/syczk301/pickup-assistant/releases/download/v0.5.0/pickup-assistant-0.5.0.apk",
+  "sizeBytes": 2491935,
+  "sha256": "b514e1b8f63f0f4d5c52c2ab5ae7d6e3038eb71702b919ecd88d67fab651c5f7",
+  "releaseNotes": "合并新增入口：首页右上角仅显示加号，打开统一的短信识别与手动添加表单。粘贴后自动填写取件信息，可修改再保存；多码支持切换查看与按短信原文批量添加。包裹页工具栏新增身份码菜单，提供淘宝、菜鸟、拼多多的指定应用跳转；不兼容时尝试应用首页并提示。仅查询3个指定包名，不新增运行时权限。第三方身份码页面可能需要登录并受客户端版本影响。"
 }

@@ -232,15 +232,7 @@ class MainActivity : Activity() {
         val pending = all.count { it.completed == 0L }
         val title = row()
         title.addView(text("取件助手", 26, ink, true).apply { includeFontPadding = false }, LinearLayout.LayoutParams(0, -2, 1f))
-        title.addView(text("粘贴短信识别", 13, accent, true).apply {
-            gravity = Gravity.CENTER
-            includeFontPadding = false
-            setSingleLine()
-            setPadding(dp(10), 0, dp(10), 0)
-            background = shape(if (dark) 0xff253e55.toInt() else 0xffe1efff.toInt(), 12)
-            contentDescription = "粘贴短信识别"
-            setOnClickListener { paste() }
-        }, LinearLayout.LayoutParams(-2, dp(44)))
+        title.addView(icon(R.drawable.ic_add, accent, "添加包裹") { addParcel() }, LinearLayout.LayoutParams(dp(48), dp(48)))
         header.addView(title)
         space(header, 4)
         val tabs = row()
@@ -281,12 +273,7 @@ class MainActivity : Activity() {
             }.show()
         })
         controls.addView(View(this), LinearLayout.LayoutParams(0, 1, 1f))
-        controls.addView(text("手动添加", 13, muted).apply {
-            gravity = Gravity.CENTER
-            setPadding(dp(8), 0, dp(8), 0)
-            contentDescription = "手动添加"
-            setOnClickListener { edit(null) }
-        }, LinearLayout.LayoutParams(-2, -1))
+        controls.addView(control("身份码", accent) { identityCode() })
         controls.addView(View(this), LinearLayout.LayoutParams(0, 1, 1f))
         controls.addView(control(if (carrierFilter == "全部") "筛选" else carrierFilter, muted) {
             AlertDialog.Builder(this).setTitle("快递公司筛选").setItems(withAll()) { _, index -> carrierFilter = withAll()[index]; render() }.show()
@@ -526,6 +513,7 @@ class MainActivity : Activity() {
     }
 
     private fun edit(old: Store.Parcel?) {
+        if (old == null) { addParcel(); return }
         val layout = col().apply { setPadding(dp(20), dp(4), dp(20), dp(12)) }
         val code = field(layout, "取件码 *", old?.code.orEmpty(), false)
         layout.addView(text("快递公司 *", 13, muted, true).apply { setPadding(0, dp(12), 0, dp(6)) })
@@ -593,42 +581,102 @@ class MainActivity : Activity() {
         dialog.show()
     }
 
-    private fun paste() {
-        val layout = col().apply { setPadding(dp(20), dp(6), dp(20), dp(12)) }
-        val input =
-            field(layout, "请粘贴完整快递短信", "", true).apply {
-                minLines = 5
-                hint = "【菜鸟驿站】包裹已到达南门驿站，取件码：8-2066，请及时取件。"
-            }
-        val result = text("识别结果会在这里显示", 13, muted)
-        layout.addView(result)
-        watch(input) {
-            val results = SmsParser.parse(it)
-            result.text =
-                if (results.isEmpty()) "未识别到取件码，请补充完整短信"
-                else results.joinToString("\n") { r -> "${r.carrier} · ${r.code}" }
+    private fun addParcel() {
+        val layout = col().apply { setPadding(dp(20), dp(8), dp(20), dp(16)) }
+        fun section(label: String) {
+            layout.addView(text(label, 17, ink, true).apply { setPadding(0, dp(8), 0, dp(6)); includeFontPadding = false })
         }
-        val dialog =
-            AlertDialog.Builder(this)
-                .setTitle("短信识别")
-                .setView(ScrollView(this).apply { addView(layout) })
-                .setNegativeButton("取消", null)
-                .setPositiveButton("识别并保存", null)
-                .create()
+        fun entry(hintText: String, multiline: Boolean = false): EditText = EditText(this).apply {
+            hint = hintText; textSize = 15f; setTextColor(ink); setHintTextColor(muted)
+            setPadding(dp(12), dp(10), dp(12), dp(10))
+            background = shape(paper, 12).apply { setStroke(dp(1), if (dark) 0xff42566b.toInt() else 0xffdce4ed.toInt()) }
+            setSingleLine(!multiline)
+            if (multiline) { minLines = 3; maxLines = 5; gravity = Gravity.TOP }
+            layout.addView(this, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(8) })
+        }
+        section("短信内容")
+        val sms = entry("粘贴完整快递短信，自动填入取件信息", true)
+        val pasteButton = action("粘贴短信内容") {
+            val clip = (getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager).primaryClip
+            val value = if (clip != null && clip.itemCount > 0) clip.getItemAt(0).coerceToText(this).toString() else ""
+            if (value.isBlank()) toast("剪贴板没有文字") else { sms.setText(value); sms.clearFocus() }
+        }
+        layout.addView(pasteButton, LinearLayout.LayoutParams(-1, -2))
+        val result = text("也可以直接填写下方取件信息", 12, muted).apply { setPadding(0, dp(8), 0, dp(8)) }
+        layout.addView(result)
+        section("取件信息")
+        val code = entry("取件码 *")
+        val carrier = Spinner(this).apply {
+            contentDescription = "快递公司"
+            adapter = ArrayAdapter(this@MainActivity, android.R.layout.simple_spinner_dropdown_item, SmsParser.CARRIERS)
+            setSelection(SmsParser.CARRIERS.lastIndex)
+        }
+        layout.addView(text("快递公司", 12, muted).apply { setPadding(dp(2), 0, 0, dp(4)) })
+        carrier.background = shape(paper, 12).apply { setStroke(dp(1), if (dark) 0xff42566b.toInt() else 0xffdce4ed.toInt()) }
+        carrier.setPadding(dp(10), 0, dp(10), 0)
+        layout.addView(carrier, LinearLayout.LayoutParams(-1, dp(48)).apply { bottomMargin = dp(8) })
+        val station = entry("驿站名称 / 地址")
+        val note = entry("备注（选填）")
+        var parsed = emptyList<SmsParser.Result>()
+        fun fill(r: SmsParser.Result) {
+            code.setText(r.code)
+            carrier.setSelection(SmsParser.CARRIERS.indexOf(r.carrier).takeIf { it >= 0 } ?: SmsParser.CARRIERS.lastIndex)
+            station.setText(r.station)
+        }
+        lateinit var dialog: AlertDialog
+        val allButton = action("按短信原文添加全部") {
+            if (parsed.size < 2) return@action
+            val count = Store.ingest(this, sms.text.toString(), System.currentTimeMillis())
+            dialog.dismiss(); render()
+            toast(if (count > 0) "已添加 $count 个取件码" else "记录已存在，无需重复添加")
+        }.apply { visibility = View.GONE }
+        layout.addView(allButton, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })
+        watch(sms) { value ->
+            parsed = SmsParser.parse(value)
+            if (parsed.isNotEmpty()) fill(parsed.first())
+            result.text = when {
+                value.isBlank() -> "也可以直接填写下方取件信息"
+                parsed.isEmpty() -> "未识别到取件码，可在下方手动填写"
+                parsed.size == 1 -> "已识别取件信息，可修改后保存"
+                else -> "识别到 ${parsed.size} 个取件码，点击切换查看；也可按原文添加全部"
+            }
+            result.setTextColor(if (parsed.isEmpty()) muted else accent)
+            allButton.visibility = if (parsed.size > 1) View.VISIBLE else View.GONE
+            allButton.text = "按短信原文添加全部 ${parsed.size} 个"
+        }
+        result.setOnClickListener {
+            if (parsed.size > 1) AlertDialog.Builder(this).setTitle("选择要填写的取件码")
+                .setItems(parsed.map { "${it.code} · ${it.carrier}" }.toTypedArray()) { _, index -> fill(parsed[index]) }.show()
+        }
+        dialog = AlertDialog.Builder(this).setTitle("添加包裹")
+            .setView(ScrollView(this).apply { addView(layout) })
+            .setNegativeButton("取消", null).setPositiveButton("保存", null).create()
         dialog.setOnShowListener {
-            dialog.getButton(-1).setOnClickListener save@{
-                val value = input.text.toString()
-                if (SmsParser.parse(value).isEmpty()) {
-                    input.error = "未识别到取件码"
-                    return@save
+            dialog.window?.setBackgroundDrawable(shape(paper, 20))
+            dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE or WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN)
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener save@{
+                val value = code.text.toString().trim()
+                if (!SmsParser.valid(value)) { code.error = "请输入 3–12 位字母、数字或短横线，不能是手机号"; return@save }
+                synchronized(Store) {
+                    val records = Store.load(this)
+                    val company = carrier.selectedItem.toString()
+                    if (records.any { it.completed == 0L && it.code.equals(value, true) && it.carrier == company }) {
+                        code.error = "已有相同的待取记录"; return@save
+                    }
+                    val parcel = Store.make(value, company, station.text.toString().trim(), note.text.toString().trim(), if (sms.text.isBlank()) "手动添加" else "短信识别")
+                    if (sms.text.isNotBlank()) parcel.source = sms.text.toString()
+                    records.add(parcel); Store.save(this, records)
                 }
-                val count = Store.ingest(this, value, System.currentTimeMillis())
-                dialog.dismiss()
-                render()
-                toast(if (count > 0) "已添加 $count 个取件码" else "记录已存在，无需重复添加")
+                dialog.dismiss(); render(); toast("已保存")
             }
         }
         dialog.show()
+    }
+
+    private fun identityCode() {
+        AlertDialog.Builder(this).setTitle("打开身份码")
+            .setItems(arrayOf("淘宝身份码", "菜鸟身份码", "拼多多身份码")) { _, index -> IdentityLauncher.open(this, index) }
+            .setNegativeButton("取消", null).show()
     }
 
     private fun batch() {
