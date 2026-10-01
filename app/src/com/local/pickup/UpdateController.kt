@@ -18,6 +18,11 @@ class UpdateController(private val activity: Activity) {
     private val context = activity.applicationContext
     private val handler = Handler(Looper.getMainLooper())
     private val worker = Executors.newSingleThreadExecutor()
+    private var startingDownload = false
+    private var downloadGeneration = 0
+    private var progressDialog: AlertDialog? = null
+    private var visible = false
+    private val deferredUi = mutableListOf<() -> Unit>()
     private var checking = false
     private var verifying = false
     private var closed = false
@@ -25,11 +30,29 @@ class UpdateController(private val activity: Activity) {
     private fun live() = !closed && !activity.isFinishing && !activity.isDestroyed
 
     private fun ui(action: () -> Unit) {
-        handler.post { if (live()) action() }
+        handler.post { if (live()) {
+            if (!visible) deferredUi.add(action)
+            else try { action() } catch (e: RuntimeException) {
+                checking = false; verifying = false
+                android.util.Log.e("PickupUpdate", "Update window failed", e)
+                Store.prefs(context).edit().putString("update_error", "无法显示更新窗口，请重新检查更新").apply()
+                Toast.makeText(context, "无法显示更新窗口，请重新检查更新", Toast.LENGTH_LONG).show()
+            }
+        } }
+    }
+
+    private fun background(action: () -> Unit) {
+        if (!live()) return
+        try { worker.execute(action) } catch (_: java.util.concurrent.RejectedExecutionException) { }
     }
 
     fun close() {
         closed = true
+        deferredUi.clear()
+        startingDownload = false
+        downloadGeneration++
+        progressDialog?.dismiss()
+        progressDialog = null
         handler.removeCallbacksAndMessages(null)
         worker.shutdownNow()
     }
@@ -44,14 +67,16 @@ class UpdateController(private val activity: Activity) {
 
     private fun message(title: String, message: String?) {
         if (live())
-            AlertDialog.Builder(activity)
+            AppDialogs.Builder(activity)
                 .setTitle(title)
                 .setMessage(message)
                 .setPositiveButton("知道了", null)
                 .show()
     }
 
-    private fun cancelDownload() =
+    private fun cancelDownload() {
+        startingDownload = false
+        downloadGeneration++
         synchronized(UpdateFiles) {
             val id = Store.prefs(context).getLong("update_download_id", -1)
             if (id != -1L)
@@ -68,8 +93,13 @@ class UpdateController(private val activity: Activity) {
                 .commit()
             Unit
         }
+    }
+
+    fun pause() { visible = false; progressDialog?.dismiss() }
 
     fun resume() {
+        visible = true
+        val deferred = deferredUi.toList(); deferredUi.clear(); deferred.forEach { ui(it) }
         try {
             if (UpdateFiles.pending(context).code <= versionCode()) cancelDownload()
         } catch (_: IOException) {}
@@ -82,7 +112,7 @@ class UpdateController(private val activity: Activity) {
         val id = Store.prefs(context).getLong("update_download_id", -1)
         when {
             id != -1L ->
-                worker.execute {
+                background {
                     UpdateDownloadReceiver.complete(context, id)
                     ui { offerReady(false) }
                 }
@@ -111,7 +141,7 @@ class UpdateController(private val activity: Activity) {
         checking = true
         Store.prefs(context).edit().putLong("update_last_check", System.currentTimeMillis()).apply()
         if (manual) Toast.makeText(activity, "正在检查更新…", Toast.LENGTH_SHORT).show()
-        worker.execute {
+        background {
             try {
                 val release = UpdateProtocol.fetchAny(UpdateProtocol.sourceCandidates(url), context.packageName)
                 ui {
@@ -130,7 +160,7 @@ class UpdateController(private val activity: Activity) {
                                     .edit()
                                     .putInt("update_prompted", release.code)
                                     .apply()
-                                AlertDialog.Builder(activity)
+                                AppDialogs.Builder(activity)
                                     .setTitle("发现新版本 ${release.name}")
                                     .setMessage(
                                         release.notes.ifEmpty { "有新版本可用。" } +
@@ -156,16 +186,31 @@ class UpdateController(private val activity: Activity) {
     }
 
     private fun download(release: UpdateProtocol.Release) {
+        if (!live() || startingDownload) return
+        startingDownload = true
+        val generation = ++downloadGeneration
+        progress()
+        background {
+            val downloadUrl = UpdateProtocol.selectDownloadUrl(release)
+            ui {
+                if (!startingDownload || generation != downloadGeneration) return@ui
+                enqueue(release, downloadUrl)
+            }
+        }
+    }
+
+    private fun enqueue(release: UpdateProtocol.Release, downloadUrl: String) {
         try {
             synchronized(UpdateFiles) {
                 if (Store.prefs(context).getLong("update_download_id", -1) != -1L) {
-                    progress()
+                    startingDownload = false
+            progress()
                     return
                 }
                 val file = UpdateFiles.file(context, release)
                 if (file.exists() && !file.delete()) throw IOException("无法清理旧安装包")
                 val request =
-                    DownloadManager.Request(Uri.parse(release.url))
+                    DownloadManager.Request(Uri.parse(downloadUrl))
                         .setTitle("取件助手 ${release.name}")
                         .setDescription("正在下载更新")
                         .setMimeType("application/vnd.android.package-archive")
@@ -187,21 +232,28 @@ class UpdateController(private val activity: Activity) {
                     )
                 Store.prefs(context).edit().putLong("update_download_id", id).commit()
             }
+            startingDownload = false
             progress()
         } catch (e: Exception) {
+            startingDownload = false
             message("无法开始下载", e.message)
         }
     }
 
     private fun progress() {
+        if (!live() || progressDialog?.isShowing == true) return
         val dialog =
-            AlertDialog.Builder(activity)
+            AppDialogs.Builder(activity)
                 .setTitle("下载更新")
                 .setMessage("正在下载，完成后会校验安装包。")
                 .setNegativeButton("取消下载") { _, _ -> cancelDownload() }
                 .setPositiveButton("后台下载", null)
                 .create()
+        progressDialog = dialog
+        dialog.setOnDismissListener { if (progressDialog === dialog) progressDialog = null }
         dialog.show()
+        var previousBytes = 0L
+        var previousTime = System.currentTimeMillis()
         val poll =
             object : Runnable {
                 override fun run() {
@@ -210,6 +262,11 @@ class UpdateController(private val activity: Activity) {
                     if (Store.prefs(context).getBoolean("update_ready", false)) {
                         dialog.dismiss()
                         offerReady(true)
+                        return
+                    }
+                    if (id == -1L && startingDownload) {
+                        dialog.setMessage("正在选择可用下载线路…")
+                        handler.postDelayed(this, 600)
                         return
                     }
                     if (id == -1L) {
@@ -246,12 +303,15 @@ class UpdateController(private val activity: Activity) {
                                             DownloadManager.COLUMN_TOTAL_SIZE_BYTES
                                         )
                                     )
+                                val now = System.currentTimeMillis()
+                                val speed = ((bytes - previousBytes).coerceAtLeast(0) * 1000.0 / (now - previousTime).coerceAtLeast(1)) / 1024
+                                previousBytes = bytes; previousTime = now
                                 dialog.setMessage(
                                     when {
                                         status == DownloadManager.STATUS_PAUSED ->
                                             "网络不可用或下载暂停，恢复网络后将继续。"
                                         status == DownloadManager.STATUS_SUCCESSFUL -> "下载完成，正在校验…"
-                                        total > 0 -> "下载进度 ${bytes * 100 / total}%"
+                                        total > 0 -> String.format(Locale.CHINA, "下载进度 %d%%\n%.2f / %.2f MB · %.0f KB/s\n可关闭窗口，在后台继续下载。", bytes * 100 / total, bytes / 1048576.0, total / 1048576.0, speed)
                                         else -> "正在下载…"
                                     }
                                 )
@@ -260,7 +320,7 @@ class UpdateController(private val activity: Activity) {
                                         status == DownloadManager.STATUS_FAILED) && !verifying
                                 ) {
                                     verifying = true
-                                    worker.execute {
+                                    background {
                                         UpdateDownloadReceiver.complete(context, id)
                                         ui { verifying = false }
                                     }
@@ -284,7 +344,7 @@ class UpdateController(private val activity: Activity) {
             if (!manual && Store.prefs(context).getInt("update_ready_prompted", 0) == release.code)
                 return
             Store.prefs(context).edit().putInt("update_ready_prompted", release.code).apply()
-            AlertDialog.Builder(activity)
+            AppDialogs.Builder(activity)
                 .setTitle("更新已准备好")
                 .setMessage("取件助手 ${release.name} 已完成校验。安装将保留已有取件记录。")
                 .setNegativeButton("稍后", null)
@@ -297,7 +357,7 @@ class UpdateController(private val activity: Activity) {
 
     private fun install() {
         if (!activity.packageManager.canRequestPackageInstalls()) {
-            AlertDialog.Builder(activity)
+            AppDialogs.Builder(activity)
                 .setTitle("允许安装更新")
                 .setMessage("请在接下来的系统设置中允许取件助手安装应用，返回后继续安装。")
                 .setNegativeButton("取消", null)
@@ -324,7 +384,7 @@ class UpdateController(private val activity: Activity) {
                 .show()
             return
         }
-        worker.execute {
+        background {
             try {
                 val release = UpdateFiles.pending(context)
                 UpdateFiles.verify(context, UpdateFiles.file(context, release), release)

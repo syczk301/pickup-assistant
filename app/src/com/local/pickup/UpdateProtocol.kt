@@ -143,6 +143,75 @@ object UpdateProtocol {
         throw IOException("更新地址跳转次数过多")
     }
 
+    // Compare official GitHub routes only; APK integrity and signing checks remain mandatory.
+    fun selectDownloadUrl(release: Release): String {
+        val pool = java.util.concurrent.Executors.newFixedThreadPool(2)
+        val results = java.util.concurrent.ExecutorCompletionService<String>(pool)
+        val tasks = mutableListOf<java.util.concurrent.Future<String>>()
+        tasks.add(results.submit(java.util.concurrent.Callable { probeDownload(release.url) }))
+        val prefix = "https://github.com/syczk301/pickup-assistant/releases/download/"
+        if (release.url.startsWith(prefix)) tasks.add(results.submit(java.util.concurrent.Callable {
+            val parts = release.url.removePrefix(prefix).split('/')
+            if (parts.size != 2) throw IOException("下载路径无效")
+            val api = "https://api.github.com/repos/syczk301/pickup-assistant/releases/tags/" + parts[0]
+            val connection = https(api).openConnection() as HttpURLConnection
+            connection.connectTimeout = 3000; connection.readTimeout = 3000
+            connection.setRequestProperty("User-Agent", "PickupAssistant-Android")
+            connection.setRequestProperty("Accept", "application/vnd.github+json")
+            val raw = try {
+                connection.inputStream.use { input ->
+                    val out = ByteArrayOutputStream(); val buffer = ByteArray(8192)
+                    while (true) { val n = input.read(buffer); if (n < 0) break; out.write(buffer, 0, n); if (out.size() > 1048576) throw IOException("发布信息过大") }
+                    out.toString("UTF-8")
+                }
+            } finally { connection.disconnect() }
+            val assets = JSONObject(raw).getJSONArray("assets")
+            val asset = (0 until assets.length()).map { assets.getJSONObject(it) }.firstOrNull { it.getString("name") == parts[1] } ?: throw IOException("找不到安装包")
+            val url = asset.getString("url")
+            if (!url.startsWith("https://api.github.com/repos/syczk301/pickup-assistant/releases/assets/")) throw IOException("下载线路无效")
+            probeDownload(url)
+        }))
+        try {
+            val deadline = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(8)
+            repeat(tasks.size) {
+                val left = deadline - System.nanoTime()
+                if (left <= 0) return release.url
+                val result = results.poll(left, java.util.concurrent.TimeUnit.NANOSECONDS) ?: return release.url
+                try { return result.get() } catch (_: java.util.concurrent.ExecutionException) { }
+            }
+        } catch (_: InterruptedException) { Thread.currentThread().interrupt() }
+        finally { tasks.forEach { it.cancel(true) }; pool.shutdownNow() }
+        return release.url
+    }
+
+    private fun probeDownload(source: String): String {
+        var url = https(source)
+        repeat(6) {
+            if (Thread.currentThread().isInterrupted) throw InterruptedIOException("下载选择已取消")
+            val connection = url.openConnection() as HttpURLConnection
+            connection.connectTimeout = 3000; connection.readTimeout = 3000
+            connection.instanceFollowRedirects = false
+            connection.setRequestProperty("User-Agent", "PickupAssistant-Android")
+            connection.setRequestProperty("Accept", "application/octet-stream")
+            connection.setRequestProperty("Range", "bytes=0-32767")
+            try {
+                val status = connection.responseCode
+                if (status in 300..399) {
+                    url = https(URL(url, connection.getHeaderField("Location") ?: throw IOException("下载跳转无效")).toString())
+                } else {
+                    if (status != 200 && status != 206) throw IOException("下载线路返回 HTTP $status")
+                    connection.inputStream.use { input ->
+                        val data = ByteArray(32768); var count = 0
+                        while (count < data.size) { val n = input.read(data, count, data.size - count); if (n < 0) break; count += n }
+                        if (count < 4 || data[0] != 0x50.toByte() || data[1] != 0x4b.toByte()) throw IOException("线路未返回安装包")
+                    }
+                    return url.toString()
+                }
+            } finally { connection.disconnect() }
+        }
+        throw IOException("下载跳转次数过多")
+    }
+
     @JvmStatic
     @Throws(IOException::class)
     fun verifyBytes(file: File, release: Release) {

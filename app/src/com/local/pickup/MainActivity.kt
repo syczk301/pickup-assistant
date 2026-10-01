@@ -46,7 +46,7 @@ class MainActivity : Activity() {
 
     override fun onCreate(saved: Bundle?) {
         if (Store.prefs(this).getBoolean("dark", false))
-            setTheme(android.R.style.Theme_Material_NoActionBar)
+            setTheme(R.style.AppThemeDark)
         super.onCreate(saved)
         updates = UpdateController(this)
         if (saved != null) {
@@ -71,10 +71,16 @@ class MainActivity : Activity() {
     }
 
     override fun onDestroy() {
+        AppDialogs.close(this)
         if (::updates.isInitialized) updates.close()
         handler.removeCallbacksAndMessages(null)
         Store.prefs(this).unregisterOnSharedPreferenceChangeListener(listener)
         super.onDestroy()
+    }
+
+    override fun onPause() {
+        if (::updates.isInitialized) updates.pause()
+        super.onPause()
     }
 
     override fun onResume() {
@@ -150,7 +156,7 @@ class MainActivity : Activity() {
     }
 
     private fun confirm(title: String, message: String, action: () -> Unit) {
-        AlertDialog.Builder(this)
+        AppDialogs.Builder(this)
             .setTitle(title)
             .setMessage(message)
             .setNegativeButton("取消", null)
@@ -232,6 +238,7 @@ class MainActivity : Activity() {
         val pending = all.count { it.completed == 0L }
         val title = row()
         title.addView(text("取件助手", 26, ink, true).apply { includeFontPadding = false }, LinearLayout.LayoutParams(0, -2, 1f))
+        title.addView(icon(R.drawable.ic_identity, accent, "身份码") { identityCode() }, LinearLayout.LayoutParams(dp(48), dp(48)))
         title.addView(icon(R.drawable.ic_add, accent, "添加包裹") { addParcel() }, LinearLayout.LayoutParams(dp(48), dp(48)))
         header.addView(title)
         space(header, 4)
@@ -268,15 +275,14 @@ class MainActivity : Activity() {
             setOnClickListener { fn() }
         }
         controls.addView(control(arrayOf("按时间", "按取件码", "按公司")[sort], accent) {
-            AlertDialog.Builder(this).setTitle("排序方式").setSingleChoiceItems(arrayOf("按时间", "按取件码", "按公司"), sort) { dialog, index ->
+            AppDialogs.Builder(this).setTitle("排序方式").setSingleChoiceItems(arrayOf("按时间", "按取件码", "按公司"), sort) { dialog, index ->
                 sort = index; Store.prefs(this).edit().putInt("sort", sort).apply(); dialog.dismiss(); render()
             }.show()
         })
         controls.addView(View(this), LinearLayout.LayoutParams(0, 1, 1f))
-        controls.addView(control("身份码", accent) { identityCode() })
         controls.addView(View(this), LinearLayout.LayoutParams(0, 1, 1f))
         controls.addView(control(if (carrierFilter == "全部") "筛选" else carrierFilter, muted) {
-            AlertDialog.Builder(this).setTitle("快递公司筛选").setItems(withAll()) { _, index -> carrierFilter = withAll()[index]; render() }.show()
+            AppDialogs.Builder(this).setTitle("快递公司筛选").setItems(withAll()) { _, index -> carrierFilter = withAll()[index]; render() }.show()
         })
         header.addView(controls, LinearLayout.LayoutParams(-1, dp(40)))
     }
@@ -463,7 +469,7 @@ class MainActivity : Activity() {
         }
 
     private fun detail(p: Store.Parcel) {
-        AlertDialog.Builder(this)
+        AppDialogs.Builder(this)
             .setTitle("${p.code} · ${p.carrier}")
             .setMessage(
                 "驿站：${p.station.ifEmpty { "未填写" }}\n收到：${date(p.created)}" +
@@ -503,12 +509,28 @@ class MainActivity : Activity() {
             setText(value)
             setTextColor(ink)
             textSize = 16f
+            setPadding(dp(12), dp(10), dp(12), dp(10))
+            background = shape(paper, 12).apply { setStroke(dp(1), if (dark) 0xff42566b.toInt() else 0xffdce4ed.toInt()) }
             setSingleLine(!multi)
             if (multi) {
                 minLines = 3
                 gravity = Gravity.TOP
             }
             layout.addView(this, LinearLayout.LayoutParams(-1, -2))
+        }
+    }
+
+    private fun styleCarrier(spinner: Spinner) {
+        spinner.setPopupBackgroundDrawable(shape(paper, 16))
+        spinner.adapter = object : ArrayAdapter<String>(this, android.R.layout.simple_spinner_dropdown_item, SmsParser.CARRIERS) {
+            override fun getView(position: Int, convertView: View?, parent: ViewGroup): View =
+                (super.getView(position, convertView, parent) as TextView).apply { setTextColor(ink); textSize = 15f }
+            override fun getDropDownView(position: Int, convertView: View?, parent: ViewGroup): View =
+                (super.getDropDownView(position, convertView, parent) as TextView).apply {
+                    setTextColor(if (position == spinner.selectedItemPosition) accent else ink); textSize = 15f
+                    minHeight = dp(48); setPadding(dp(16), dp(10), dp(16), dp(10))
+                    background = shape(if (dark) 0xff25384a.toInt() else 0xfff2f6fa.toInt(), 8)
+                }
         }
     }
 
@@ -525,14 +547,14 @@ class MainActivity : Activity() {
                         android.R.layout.simple_spinner_dropdown_item,
                         SmsParser.CARRIERS,
                     )
-                if (old != null)
-                    SmsParser.CARRIERS.indexOf(old.carrier).takeIf { it >= 0 }?.let(::setSelection)
+                styleCarrier(this)
+                SmsParser.CARRIERS.indexOf(old.carrier).takeIf { it >= 0 }?.let(::setSelection)
             }
         layout.addView(carrier)
         val station = field(layout, "驿站名称 / 地址", old?.station.orEmpty(), false)
         val note = field(layout, "备注", old?.note.orEmpty(), true)
         val dialog =
-            AlertDialog.Builder(this)
+            AppDialogs.Builder(this)
                 .setTitle(if (old == null) "添加取件码" else "编辑包裹")
                 .setView(ScrollView(this).apply { addView(layout) })
                 .setNegativeButton("取消", null)
@@ -609,6 +631,7 @@ class MainActivity : Activity() {
         val carrier = Spinner(this).apply {
             contentDescription = "快递公司"
             adapter = ArrayAdapter(this@MainActivity, android.R.layout.simple_spinner_dropdown_item, SmsParser.CARRIERS)
+            styleCarrier(this)
             setSelection(SmsParser.CARRIERS.lastIndex)
         }
         layout.addView(text("快递公司", 12, muted).apply { setPadding(dp(2), 0, 0, dp(4)) })
@@ -645,14 +668,13 @@ class MainActivity : Activity() {
             allButton.text = "按短信原文添加全部 ${parsed.size} 个"
         }
         result.setOnClickListener {
-            if (parsed.size > 1) AlertDialog.Builder(this).setTitle("选择要填写的取件码")
+            if (parsed.size > 1) AppDialogs.Builder(this).setTitle("选择要填写的取件码")
                 .setItems(parsed.map { "${it.code} · ${it.carrier}" }.toTypedArray()) { _, index -> fill(parsed[index]) }.show()
         }
-        dialog = AlertDialog.Builder(this).setTitle("添加包裹")
+        dialog = AppDialogs.Builder(this).setTitle("添加包裹")
             .setView(ScrollView(this).apply { addView(layout) })
             .setNegativeButton("取消", null).setPositiveButton("保存", null).create()
         dialog.setOnShowListener {
-            dialog.window?.setBackgroundDrawable(shape(paper, 20))
             dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE or WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN)
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener save@{
                 val value = code.text.toString().trim()
@@ -674,7 +696,7 @@ class MainActivity : Activity() {
     }
 
     private fun identityCode() {
-        AlertDialog.Builder(this).setTitle("打开身份码")
+        AppDialogs.Builder(this).setTitle("打开身份码")
             .setItems(arrayOf("淘宝身份码", "菜鸟身份码", "拼多多身份码")) { _, index -> IdentityLauncher.open(this, index) }
             .setNegativeButton("取消", null).show()
     }
@@ -830,7 +852,7 @@ class MainActivity : Activity() {
         val hour = Store.prefs(this).getInt("hour", 18)
         val minute = Store.prefs(this).getInt("minute", 0)
         settingRow(c, "提醒时间", String.format(Locale.CHINA, "每天 %02d:%02d", hour, minute)) {
-            TimePickerDialog(
+            AppDialogs.TimeDialog(
                     this,
                     { _, h, m ->
                         Store.prefs(this).edit().putInt("hour", h).putInt("minute", m).apply()
@@ -875,7 +897,7 @@ class MainActivity : Activity() {
             )
         }
         settingRow(data, "桌面小组件", "长按桌面 → 小组件 → 取件助手") {
-            AlertDialog.Builder(this)
+            AppDialogs.Builder(this)
                 .setTitle("桌面小组件")
                 .setMessage("在桌面长按空白处，找到取件助手小组件。小组件显示待取数量，常规双栏尺寸展示 6 个取件码；显示数量随高度和字体大小调整，点击打开应用。")
                 .setPositiveButton("知道了", null)
@@ -899,7 +921,7 @@ class MainActivity : Activity() {
             toast("接收短信权限已开启")
             return
         }
-        AlertDialog.Builder(this)
+        AppDialogs.Builder(this)
             .setTitle("开启新短信识别")
             .setMessage("接收短信权限用于提取新收到的快递短信取件码。短信只在设备上处理，不会上传。拒绝后仍可手动添加或粘贴识别。")
             .setNegativeButton("暂不开启", null)
@@ -1031,7 +1053,7 @@ class MainActivity : Activity() {
                 }
             }
         } catch (e: Exception) {
-            AlertDialog.Builder(this)
+            AppDialogs.Builder(this)
                 .setTitle("备份操作失败")
                 .setMessage(e.message)
                 .setPositiveButton("知道了", null)

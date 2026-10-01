@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
   "packageName": "com.local.pickup",
-  "versionCode": 15,
-  "versionName": "0.5.0",
+  "versionCode": 16,
+  "versionName": "0.5.1",
   "minSdk": 26,
-  "apkUrl": "https://github.com/syczk301/pickup-assistant/releases/download/v0.5.0/pickup-assistant-0.5.0.apk",
-  "sizeBytes": 2491935,
-  "sha256": "b514e1b8f63f0f4d5c52c2ab5ae7d6e3038eb71702b919ecd88d67fab651c5f7",
-  "releaseNotes": "合并新增入口：首页右上角仅显示加号，打开统一的短信识别与手动添加表单。粘贴后自动填写取件信息，可修改再保存；多码支持切换查看与按短信原文批量添加。包裹页工具栏新增身份码菜单，提供淘宝、菜鸟、拼多多的指定应用跳转；不兼容时尝试应用首页并提示。仅查询3个指定包名，不新增运行时权限。第三方身份码页面可能需要登录并受客户端版本影响。"
+  "apkUrl": "https://github.com/syczk301/pickup-assistant/releases/download/v0.5.1/pickup-assistant-0.5.1.apk",
+  "sizeBytes": 2516585,
+  "sha256": "70899d3ffe96c718ad37f4c7f0f2d14ddd155863b6de2bef936cfdfd35f8ebd9",
+  "releaseNotes": "身份码移到首页右上角二维码图标，与加号并列。统一应用内弹窗的圆角卡片、选项、按钮、输入框与深色配色。更新提示等待页面前台与窗口就绪，退出页面关闭所属弹窗，并增加异常保护。下载并行探测 GitHub 官方直链和资产 API，选择可用线路，显示大小、速度和进度；保留完整安装包校验，不新增权限。安卓模拟器已验证首次提示、前后台切换、取消和完整下载；真机报告的首次闪退未取得日志复现，需升级后确认。实际下载速度仍取决于网络。"
 }
