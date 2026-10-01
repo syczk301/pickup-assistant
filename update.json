@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
   "packageName": "com.local.pickup",
-  "versionCode": 16,
-  "versionName": "0.5.1",
+  "versionCode": 17,
+  "versionName": "0.5.2",
   "minSdk": 26,
-  "apkUrl": "https://github.com/syczk301/pickup-assistant/releases/download/v0.5.1/pickup-assistant-0.5.1.apk",
-  "sizeBytes": 2516585,
-  "sha256": "70899d3ffe96c718ad37f4c7f0f2d14ddd155863b6de2bef936cfdfd35f8ebd9",
-  "releaseNotes": "身份码移到首页右上角二维码图标，与加号并列。统一应用内弹窗的圆角卡片、选项、按钮、输入框与深色配色。更新提示等待页面前台与窗口就绪，退出页面关闭所属弹窗，并增加异常保护。下载并行探测 GitHub 官方直链和资产 API，选择可用线路，显示大小、速度和进度；保留完整安装包校验，不新增权限。安卓模拟器已验证首次提示、前后台切换、取消和完整下载；真机报告的首次闪退未取得日志复现，需升级后确认。实际下载速度仍取决于网络。"
+  "apkUrl": "https://github.com/syczk301/pickup-assistant/releases/download/v0.5.2/pickup-assistant-0.5.2.apk",
+  "sizeBytes": 2524777,
+  "sha256": "6183c73f6c245802013e1596def4b9fb87670411a5ec46be734e569ef34b3c08",
+  "releaseNotes": "设置页按短信识别、通知与提醒、显示与数据、应用更新、关于五组折叠，默认收起，标题显示开关及版本摘要。展开后可操作原有选项，开关变化即时更新摘要，切换页面和深浅色模式保留展开状态。未新增权限。安卓原生界面已验证各组展开收起、状态摘要和配置重建。"
 }

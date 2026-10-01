@@ -37,6 +37,8 @@ class MainActivity : Activity() {
     private var paper = 0
     private var bg = 0
     private var accent = 0
+    private val expandedSettings = mutableSetOf<String>()
+    private val settingsSummaries = mutableListOf<() -> Unit>()
     private val handler = Handler(Looper.getMainLooper())
     @Volatile private var scanning = false
     private val listener =
@@ -55,6 +57,7 @@ class MainActivity : Activity() {
             sort = saved.getInt("sort")
             query = saved.getString("query", "")
             carrierFilter = saved.getString("carrierFilter", "全部")
+            expandedSettings.addAll(saved.getStringArrayList("expandedSettings") ?: emptyList())
         } else sort = Store.prefs(this).getInt("sort", 0)
         Store.prefs(this).registerOnSharedPreferenceChangeListener(listener)
         ReminderReceiver.schedule(this)
@@ -68,6 +71,7 @@ class MainActivity : Activity() {
         state.putInt("sort", sort)
         state.putString("query", query)
         state.putString("carrierFilter", carrierFilter)
+        state.putStringArrayList("expandedSettings", ArrayList(expandedSettings))
     }
 
     override fun onDestroy() {
@@ -167,6 +171,7 @@ class MainActivity : Activity() {
     private fun date(time: Long) = SimpleDateFormat("MM-dd HH:mm", Locale.CHINA).format(Date(time))
 
     private fun render() {
+        settingsSummaries.clear()
         dark = Store.prefs(this).getBoolean("dark", false)
         ink = if (dark) 0xffeef5fc.toInt() else 0xff08263c.toInt()
         muted = if (dark) 0xffa9b7c6.toInt() else 0xff788695.toInt()
@@ -808,6 +813,7 @@ class MainActivity : Activity() {
                 setOnCheckedChangeListener { _, checked ->
                     Store.prefs(this@MainActivity).edit().putBoolean(key, checked).apply()
                     action?.invoke()
+                    settingsSummaries.forEach { it() }
                 }
             }
         )
@@ -824,9 +830,44 @@ class MainActivity : Activity() {
             requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 12)
     }
 
+    private fun settingsGroup(key: String, title: String, summary: () -> String): LinearLayout {
+        val container = card(body).apply { setPadding(dp(18), 0, dp(18), 0) }
+        val header = row().apply { minimumHeight = dp(80); setPadding(0, dp(14), 0, dp(14)); isFocusable = true }
+        val labels = col()
+        labels.addView(text(title, 17, ink, true))
+        val detail = text(summary(), 12, muted).apply { setPadding(0, dp(5), 0, 0) }
+        labels.addView(detail)
+        header.addView(labels, LinearLayout.LayoutParams(0, -2, 1f))
+        val arrow = icon(R.drawable.ic_expand, muted, "").apply { importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO }
+        header.addView(arrow, LinearLayout.LayoutParams(dp(32), dp(32)))
+        container.addView(header)
+        val content = col().apply { setPadding(0, 0, 0, dp(14)) }
+        divider(content)
+        container.addView(content)
+        fun refresh() {
+            val open = key in expandedSettings
+            content.visibility = if (open) View.VISIBLE else View.GONE
+            arrow.rotation = if (open) 180f else 0f
+            detail.text = summary()
+            header.contentDescription = "$title，${detail.text}，${if (open) "已展开，点击收起" else "已折叠，点击展开"}"
+        }
+        header.setOnClickListener {
+            if (!expandedSettings.add(key)) expandedSettings.remove(key)
+            refresh()
+        }
+        settingsSummaries.add(::refresh)
+        refresh()
+        return content
+    }
+
     private fun settings() {
-        heading("自动识别与提醒")
-        val c = card(body)
+        val prefs = Store.prefs(this)
+        val c = settingsGroup("sms", "短信识别") {
+            if (prefs.getBoolean("auto_sms", true)) {
+                if (checkSelfPermission(Manifest.permission.RECEIVE_SMS) == PackageManager.PERMISSION_GRANTED) "自动识别已开启 · 支持历史短信扫描"
+                else "自动识别待授权 · 支持历史短信扫描"
+            } else "自动识别已关闭 · 支持历史短信扫描"
+        }
         toggle(c, "自动识别新短信", "需要接收短信权限", "auto_sms", true) {
             if (Store.prefs(this).getBoolean("auto_sms", true)) requestSmsPermission()
         }
@@ -842,16 +883,21 @@ class MainActivity : Activity() {
             ::requestSmsPermission,
         )
         settingRow(c, "扫描最近 30 天短信", if (scanning) "正在扫描…" else "仅识别快递相关短信，重复记录自动跳过", ::scan)
-        toggle(c, "新包裹通知", "识别成功后发送取件提醒", "notify", true) {
+        val reminders = settingsGroup("reminders", "通知与提醒") {
+            val notify = if (prefs.getBoolean("notify", true)) "新包裹通知已开启" else "新包裹通知已关闭"
+            val daily = if (prefs.getBoolean("remind", false)) String.format(Locale.CHINA, "每天 %02d:%02d 提醒", prefs.getInt("hour", 18), prefs.getInt("minute", 0)) else "每日提醒已关闭"
+            "$notify · $daily"
+        }
+        toggle(reminders, "新包裹通知", "识别成功后发送取件提醒", "notify", true) {
             if (Store.prefs(this).getBoolean("notify", true)) requestNotification()
         }
-        toggle(c, "每天提醒未取包裹", "系统省电可能延迟提醒", "remind", false) {
+        toggle(reminders, "每天提醒未取包裹", "系统省电可能延迟提醒", "remind", false) {
             ReminderReceiver.schedule(this)
             if (Store.prefs(this).getBoolean("remind", false)) requestNotification()
         }
         val hour = Store.prefs(this).getInt("hour", 18)
         val minute = Store.prefs(this).getInt("minute", 0)
-        settingRow(c, "提醒时间", String.format(Locale.CHINA, "每天 %02d:%02d", hour, minute)) {
+        settingRow(reminders, "提醒时间", String.format(Locale.CHINA, "每天 %02d:%02d", hour, minute)) {
             AppDialogs.TimeDialog(
                     this,
                     { _, h, m ->
@@ -873,8 +919,7 @@ class MainActivity : Activity() {
                 )
             )
         }
-        heading("显示与数据")
-        val data = card(body)
+        val data = settingsGroup("data", "显示与数据") { "${if (prefs.getBoolean("dark", false)) "深色模式" else "浅色模式"} · 本地备份 · 桌面小组件" }
         toggle(data, "深色模式", "切换页面背景与文字配色", "dark", false) { recreate() }
         settingRow(data, "导出本地备份", "JSON 格式，包含完整取件记录") {
             startActivityForResult(
@@ -903,14 +948,12 @@ class MainActivity : Activity() {
                 .setPositiveButton("知道了", null)
                 .show()
         }
-        heading("应用更新")
-        val update = card(body)
+        val update = settingsGroup("update", "应用更新") { "${updates.version()} · ${if (prefs.getBoolean("auto_update", true)) "自动检查已开启" else "自动检查已关闭"}" }
         settingRow(update, "检查更新", "当前版本 ${updates.version()} · ${UpdateFiles.status(this)}") {
             updates.check(true)
         }
         toggle(update, "自动检查更新", "每天首次打开时检查新版本", "auto_update", true)
-        heading("关于")
-        val about = card(body)
+        val about = settingsGroup("about", "关于取件助手") { "短信与取件记录仅保存在本机" }
         about.addView(text("取件助手 ${updates.version()}", 18, ink, true))
         space(about, 8)
         about.addView(text("短信识别、取件管理与本地备份。短信和取件记录在本机处理，不上传。", 13, muted))
