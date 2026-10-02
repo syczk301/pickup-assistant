@@ -30,8 +30,9 @@ def prepare():
     for language in ('chi_sim', 'eng'):
         (assets / (language + '.traineddata')).write_bytes(files[language + '.traineddata'].read_bytes())
     licenses = assets.parent / 'licenses'; licenses.mkdir(exist_ok=True)
-    for path in (ROOT / 'third_party').glob('ocr-*.txt'):
+    for path in (ROOT / 'third_party').glob('*.txt'):
         (licenses / path.name).write_bytes(path.read_bytes())
+    (licenses / 'carrier-logos.json').write_bytes((ROOT / 'carrier-logos.json').read_bytes())
     return jar, jni, assets.parent
 
 if __name__ == '__main__':

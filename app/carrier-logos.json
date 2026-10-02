@@ -1,0 +1,111 @@
+{
+  "retrievedOn": "2026-10-03",
+  "purpose": "Identify the courier or parcel collection brand for a user parcel; offline display in list and carrier picker.",
+  "rendering": "FIT_CENTER, original colors, white plate for light and dark themes; no runtime logo downloads. Other or unrecognized carrier names use the app generic parcel icon.",
+  "rights": "All trademarks and brand artwork remain owned by their respective rights holders. These assets are excluded from the app MIT license. Source attribution does not assert a license grant, affiliation, sponsorship, or endorsement.",
+  "brands": [
+    {
+      "carrier": "菜鸟驿站",
+      "sourcePage": "https://z.cainiao.com/",
+      "sourceAsset": "https://img.alicdn.com/imgextra/i3/O1CN01M2vwVL1aiIfsMJxkP_!!6000000003363-2-tps-869-303.png",
+      "originalSha256": "2634019bfbf667821de91626a2a047fc3e0b8d397904f181e27f9368b9a19e9c",
+      "resource": "res/drawable-nodpi/carrier_cainiao.png",
+      "resourceSha256": "2634019bfbf667821de91626a2a047fc3e0b8d397904f181e27f9368b9a19e9c",
+      "conversion": "PNG copied without artwork changes"
+    },
+    {
+      "carrier": "顺丰速运",
+      "sourcePage": "https://www.sf-express.com/chn/sc",
+      "sourceAsset": "https://www-static.sf-express.com/ssr2_blue/_next/static/media/ic-black-logo.c86816fe.png",
+      "originalSha256": "6da4a712ae75c26d5694341e5d6c30b5492c2d72a63b1c49d4909088c0eac03b",
+      "resource": "res/drawable-nodpi/carrier_sf.png",
+      "resourceSha256": "6da4a712ae75c26d5694341e5d6c30b5492c2d72a63b1c49d4909088c0eac03b",
+      "conversion": "PNG copied without artwork changes"
+    },
+    {
+      "carrier": "中通快递",
+      "sourcePage": "https://www.zto.com/",
+      "sourceAsset": "https://fscdn.zto.com/GetPublicFile/clouddrive/PRO_124/zto-official/logo.png",
+      "originalSha256": "311d95618516e7bda36808b2473146c32a91b1853c6d2c857e08110ae6e12639",
+      "resource": "res/drawable-nodpi/carrier_zto.png",
+      "resourceSha256": "311d95618516e7bda36808b2473146c32a91b1853c6d2c857e08110ae6e12639",
+      "conversion": "PNG copied without artwork changes"
+    },
+    {
+      "carrier": "圆通速递",
+      "sourcePage": "https://www.yto.net.cn/",
+      "sourceAsset": "https://www.yto.net.cn/_nuxt/img/logo-color.0ea6b1c.png",
+      "originalSha256": "149ea74ae302d0cdc986ff87f738a7f87539e5809f826c41ba571061de2ce956",
+      "resource": "res/drawable-nodpi/carrier_yto.png",
+      "resourceSha256": "149ea74ae302d0cdc986ff87f738a7f87539e5809f826c41ba571061de2ce956",
+      "conversion": "PNG copied without artwork changes"
+    },
+    {
+      "carrier": "申通快递",
+      "sourcePage": "https://www.sto.cn/?lang=zh",
+      "sourceAsset": "https://www.sto.cn/sto.svg",
+      "originalSha256": "4696b285b72e9916f9de1b1ef11b4d7a6e685d0a7f66f1cfb0c351bc009856f5",
+      "resource": "res/drawable/carrier_sto.xml",
+      "resourceSha256": "32ad7240cae785d4b11ce372416d460ee6b4a3a18c50ced5699abe06198e7236",
+      "conversion": "SVG to Android VectorDrawable; original paths, colors, fill rule and viewport retained; full viewport mask uses Android viewport clipping",
+      "originalSvg": "third_party/carrier-logo-originals/sto.svg",
+      "originalSvgSha256": "4696b285b72e9916f9de1b1ef11b4d7a6e685d0a7f66f1cfb0c351bc009856f5"
+    },
+    {
+      "carrier": "韵达快递",
+      "sourcePage": "https://www.yundaex.com/cn/product_xiazai.php",
+      "sourceAsset": "https://wcdn.yundaex.com/cn/images/logo.png?v=20260701",
+      "originalSha256": "f90c207c548589c2c57f6da3d59814faf22d76f6edc4a89e757308f6e7256ce1",
+      "resource": "res/drawable-nodpi/carrier_yunda.png",
+      "resourceSha256": "f90c207c548589c2c57f6da3d59814faf22d76f6edc4a89e757308f6e7256ce1",
+      "conversion": "PNG copied without artwork changes"
+    },
+    {
+      "carrier": "极兔速递",
+      "sourcePage": "https://www.jtexpress.com/",
+      "sourceAsset": "https://www.jtexpress.com/icons/logo.png",
+      "originalSha256": "bb89e389fac2bf0f9661f30b7c8fba5b20cb8c3cc9173e9b9fdf223a3ef582e9",
+      "resource": "res/drawable-nodpi/carrier_jt.png",
+      "resourceSha256": "bb89e389fac2bf0f9661f30b7c8fba5b20cb8c3cc9173e9b9fdf223a3ef582e9",
+      "conversion": "PNG copied without artwork changes"
+    },
+    {
+      "carrier": "京东物流",
+      "sourcePage": "https://www.jdl.com/",
+      "sourceAsset": "https://www.jdl.com/favicon.ico",
+      "originalSha256": "2fdf92a14e017a716ef831f9af691922f23c04cfafcc7eb092f9f80de8f470b0",
+      "resource": "res/drawable-nodpi/carrier_jd.png",
+      "resourceSha256": "c515cf727e58f76a8ef0a5868e9ce7d79a482313129133dcda4273720fe1e8b9",
+      "conversion": "Official favicon ICO to lossless PNG; original 64x64 pixels retained"
+    },
+    {
+      "carrier": "邮政EMS",
+      "sourcePage": "https://my.ems.com.cn/pcp-vue/",
+      "sourceAsset": "https://my.ems.com.cn/pcp-vue/static/js/app-86e8d9f4.1790068976414.js",
+      "originalSha256": "8de6cab95f6a46e910c4540f3641bdd9b4beb13f0bedd8ce5100a7eafacfc835",
+      "resource": "res/drawable/carrier_ems.xml",
+      "resourceSha256": "e4e9235c943eda471986644df15b02a551acd01172a79d088aa06e3a2b650fbf",
+      "conversion": "Official icon-logo-ems SVG symbol extracted from website bundle and converted to Android VectorDrawable; original paths, colors, fill rule, translations and viewport retained",
+      "originalSvg": "third_party/carrier-logo-originals/ems.svg",
+      "originalSvgSha256": "aed6a20a06deae629a7cdb53ec80b64e18ba067db6fbbd93d2b6aaab583cc612"
+    },
+    {
+      "carrier": "德邦快递",
+      "sourcePage": "https://www.deppon.com.cn/",
+      "sourceAsset": "https://ca.deppon.com.cn/ows/static/pc/new/26.png",
+      "originalSha256": "35afe6cedeb657ca99e4f34e6bbad427e7251b5d795aefc7378343d5db38a954",
+      "resource": "res/drawable-nodpi/carrier_deppon.png",
+      "resourceSha256": "35afe6cedeb657ca99e4f34e6bbad427e7251b5d795aefc7378343d5db38a954",
+      "conversion": "PNG copied without artwork changes"
+    },
+    {
+      "carrier": "丰巢",
+      "sourcePage": "https://www.fcbox.com/",
+      "sourceAsset": "https://www.fcbox.com/images/default/icon/logo.png",
+      "originalSha256": "680f2dba9e619e167682d581350fedeb90d56eed93e6cd416cf78e0bcdb24f9f",
+      "resource": "res/drawable-nodpi/carrier_fcbox.png",
+      "resourceSha256": "680f2dba9e619e167682d581350fedeb90d56eed93e6cd416cf78e0bcdb24f9f",
+      "conversion": "PNG copied without artwork changes"
+    }
+  ]
+}

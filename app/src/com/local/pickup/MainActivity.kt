@@ -443,8 +443,7 @@ class MainActivity : Activity() {
             info.addView(codeRow)
             space(info, 2)
             val detailRow = row()
-            val badgeColor = when { p.carrier.contains("圆通") -> 0xff8054db.toInt(); p.carrier.contains("顺丰") -> 0xff282828.toInt(); p.carrier.contains("京东") -> 0xffeb363c.toInt(); else -> 0xff1677ff.toInt() }
-            detailRow.addView(text(p.carrier.take(2), 11, Color.WHITE, true).apply { gravity = Gravity.CENTER; includeFontPadding = false; background = shape(badgeColor, 6) }, LinearLayout.LayoutParams(dp(30), dp(26)))
+            detailRow.addView(CarrierLogos.view(this, p.carrier), LinearLayout.LayoutParams(dp(CarrierLogos.widthDp(p.carrier)), dp(28)))
             val summary = if (p.station.isEmpty()) p.carrier else if (p.station == p.carrier) p.station else "${p.station} · ${p.carrier}"
             detailRow.addView(text(summary, 13, muted).apply {
                 setPadding(dp(8), 0, dp(4), 0)
@@ -544,14 +543,22 @@ class MainActivity : Activity() {
     private fun styleCarrier(spinner: Spinner) {
         spinner.setPopupBackgroundDrawable(shape(paper, 16))
         spinner.adapter = object : ArrayAdapter<String>(this, android.R.layout.simple_spinner_dropdown_item, SmsParser.CARRIERS) {
-            override fun getView(position: Int, convertView: View?, parent: ViewGroup): View =
-                (super.getView(position, convertView, parent) as TextView).apply { setTextColor(ink); textSize = 15f }
-            override fun getDropDownView(position: Int, convertView: View?, parent: ViewGroup): View =
-                (super.getDropDownView(position, convertView, parent) as TextView).apply {
-                    setTextColor(if (position == spinner.selectedItemPosition) accent else ink); textSize = 15f
-                    minHeight = dp(48); setPadding(dp(16), dp(10), dp(16), dp(10))
-                    background = shape(if (dark) 0xff25384a.toInt() else 0xfff2f6fa.toInt(), 8)
+            private fun option(position: Int, dropdown: Boolean): View {
+                val name = getItem(position).orEmpty()
+                return row().apply {
+                    minimumHeight = dp(48)
+                    setPadding(dp(if (dropdown) 12 else 4), dp(8), dp(12), dp(8))
+                    if (dropdown) background = shape(if (dark) 0xff25384a.toInt() else 0xfff2f6fa.toInt(), 8)
+                    addView(CarrierLogos.view(this@MainActivity, name), LinearLayout.LayoutParams(dp(60), dp(30)).apply { rightMargin = dp(10) })
+                    addView(text(name, 15, if (dropdown && position == spinner.selectedItemPosition) accent else ink).apply {
+                        includeFontPadding = false
+                        setSingleLine()
+                        ellipsize = TextUtils.TruncateAt.END
+                    }, LinearLayout.LayoutParams(0, -2, 1f))
                 }
+            }
+            override fun getView(position: Int, convertView: View?, parent: ViewGroup): View = option(position, false)
+            override fun getDropDownView(position: Int, convertView: View?, parent: ViewGroup): View = option(position, true)
         }
     }
 
@@ -673,7 +680,7 @@ class MainActivity : Activity() {
         layout.addView(text("快递公司", 12, muted).apply { setPadding(dp(2), 0, 0, dp(4)) })
         carrier.background = shape(paper, 12).apply { setStroke(dp(1), if (dark) 0xff42566b.toInt() else 0xffdce4ed.toInt()) }
         carrier.setPadding(dp(10), 0, dp(10), 0)
-        layout.addView(carrier, LinearLayout.LayoutParams(-1, dp(48)).apply { bottomMargin = dp(8) })
+        layout.addView(carrier, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(8) })
         val station = entry("驿站名称 / 地址")
         val note = entry("备注（选填）")
         var parsed = emptyList<SmsParser.Result>()

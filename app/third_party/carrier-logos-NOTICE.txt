@@ -1,0 +1,22 @@
+Courier and parcel collection brand artwork
+
+All trademarks and artwork remain the property of the respective brand owners.
+The project MIT license applies to application code; it does not grant rights to
+these third-party marks. Their use identifies the carrier or parcel collection
+service named in a user record. No affiliation, sponsorship, or endorsement is
+asserted. Logos are displayed in their original colors and aspect ratios.
+
+Official source pages, asset URLs, retrieval date, original and resource SHA-256
+digests, and technical format conversions are recorded in carrier-logos.json.
+
+菜鸟驿站: https://z.cainiao.com/
+顺丰速运: https://www.sf-express.com/chn/sc
+中通快递: https://www.zto.com/
+圆通速递: https://www.yto.net.cn/
+申通快递: https://www.sto.cn/?lang=zh
+韵达快递: https://www.yundaex.com/cn/product_xiazai.php
+极兔速递: https://www.jtexpress.com/
+京东物流: https://www.jdl.com/
+邮政EMS: https://my.ems.com.cn/pcp-vue/
+德邦快递: https://www.deppon.com.cn/
+丰巢: https://www.fcbox.com/
