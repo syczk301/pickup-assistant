@@ -1,6 +1,6 @@
 # 拾件簿
 
-原生 Kotlin Android 应用，包名 `com.local.pickup`，最低 Android 8.0。当前测试版本 0.5.5，版本号 22；正式渠道为 0.5.4，MIT 许可证。
+原生 Kotlin Android 应用，包名 `com.local.pickup`，最低 Android 8.0。当前测试版本 0.5.6，版本号 23；正式渠道为 0.5.5，MIT 许可证。
 
 应用的 14 个模块均使用 Kotlin；短信和取件记录在本机处理。支持短信提取、粘贴识别、记录管理、统计、提醒、小组件、JSON 备份和 GitHub 在线更新。
 
@@ -32,7 +32,7 @@
 
 采用清单布局：按日期分组、突出取件码、快速复制和取件状态切换。搜索、排序、筛选和右上角短信识别入口保留。桌面小组件根据高度和字体大小显示最多 12 条记录，取件状态改变后自动刷新。设置页保留检查更新与自动检查开关，更新地址不在界面中显示。
 
-界面图标来自 Google Material Icons / Material Symbols，使用 Apache 2.0 许可证，授权与来源见 `third_party/`。应用源码使用 MIT 许可证。
+功能图标来自 Google Material Icons / Material Symbols，使用 Apache 2.0 许可证，授权与来源见 `third_party/`。品牌标签卡图标由本项目绘制，与应用源码一起使用 MIT 许可证。
 
 0.4.1 压缩首页顶部留白、标签/搜索区域和底部间距，将驿站与快递公司合并为单行。相同 360×800dp 测试屏幕由完整显示 3 条提升到 5 条；实际数量取决于字体、日期分组和屏幕尺寸。
 
@@ -79,10 +79,12 @@
 
 新功能只发布 GitHub Pre-release，命名 vX.Y.Z-beta.N。应用内部 versionName 使用 X.Y.Z，测试阶段由发布标签和更新渠道标识；正式审核后复用同一个 APK，保持 SHA-256、签名及内部版本号不变。内部 versionCode 跨渠道递增，已用过的 19、20 不再使用。
 
-发布测试版：修改清单和 Gradle 中的版本；运行 build.py、test.py；写入上一级 deliverables/beta-release-notes.txt。设置具有 contents/workflows 写权限的 GITHUB_TOKEN，然后运行 python app\release.py beta v0.5.5-beta.1。脚本验证签名和 APK 版本，上传测试 APK、源码及测试版本文件，保留正式版本文件不变。失败或结果未知时先检查远端发布状态，不直接重复执行。
+发布测试版：修改清单和 Gradle 中的版本；运行 build.py、test.py；写入上一级 deliverables/beta-release-notes.txt。设置具有 contents/workflows 写权限的 GITHUB_TOKEN，然后运行 python app\release.py beta v0.5.6-beta.1。脚本验证签名和 APK 版本，上传测试 APK、源码及测试版本文件，保留正式版本文件不变。失败或结果未知时先检查远端发布状态，不直接重复执行。
 
 正式评审：打开 GitHub Actions 的 Review and promote Beta to stable，Run workflow，填写测试标签。inspect 任务验证包名、版本、签名、SHA-256 和源码包，生成评审候选。production 任务必须经过仓库负责人 syczk301 在 GitHub 上批准；只有 main 分支允许执行。未经批准不会更新正式入口。流程重新检查候选没有变化，再将同一 APK 发布为正式 Release 并更新 update.json。评审前可查看候选记录、测试结果及手机效果；有修改应发布新 Beta 后重新评审。
 
 正式发布无需上传签名私钥到 GitHub；所有 APK 在本地签名。Beta 发布与待审批不会更新正式入口。
 
 0.5.5 Beta 1 应用更名为拾件簿，启动图标改为深青底色的标签卡，包含打孔、条码和取件勾选。包名和签名保持兼容，覆盖安装保留本地数据。
+
+0.5.6 Beta 1 应用内的包裹导航和空列表图标统一为标签卡样式，包含打孔、条码和勾选，保留选中态、深色模式与功能图标的可读性。

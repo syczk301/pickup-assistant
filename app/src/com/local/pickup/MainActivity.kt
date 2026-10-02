@@ -224,7 +224,7 @@ class MainActivity : Activity() {
         divider(root)
         val nav = row().apply { setBackgroundColor(paper); setPadding(dp(16), dp(3), dp(16), dp(3)) }
         root.addView(nav, LinearLayout.LayoutParams(-1, dp(52)))
-        val navIcons = intArrayOf(R.drawable.ic_parcel, R.drawable.ic_stats, R.drawable.ic_settings)
+        val navIcons = intArrayOf(R.drawable.ic_tag, R.drawable.ic_stats, R.drawable.ic_settings)
         arrayOf("包裹", "统计", "设置").forEachIndexed { index, label ->
             val color = if (index == page) accent else muted
             val tab = col().apply {
@@ -366,7 +366,7 @@ class MainActivity : Activity() {
         val shown = visible()
         if (shown.isEmpty()) {
             val empty = col().apply { gravity = Gravity.CENTER; setPadding(0, dp(56), 0, dp(40)) }
-            empty.addView(icon(R.drawable.ic_parcel, accent, "包裹"), LinearLayout.LayoutParams(dp(68), dp(68)))
+            empty.addView(icon(R.drawable.ic_tag, accent, "包裹"), LinearLayout.LayoutParams(dp(68), dp(68)))
             space(empty, 12)
             empty.addView(text(if (query.isNotEmpty() || carrierFilter != "全部") "没有匹配的包裹" else if (filterTab == 0) "暂无待取包裹" else "还没有已取记录", 18, ink, true).apply { gravity = Gravity.CENTER })
             space(empty, 10)

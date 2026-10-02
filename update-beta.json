@@ -2,11 +2,11 @@
   "schemaVersion": 1,
   "packageName": "com.local.pickup",
   "channel": "beta",
-  "versionCode": 22,
-  "versionName": "0.5.5",
+  "versionCode": 23,
+  "versionName": "0.5.6",
   "minSdk": 26,
-  "apkUrl": "https://github.com/syczk301/pickup-assistant/releases/download/v0.5.5-beta.1/pickup-assistant-0.5.5.apk",
-  "sizeBytes": 2549693,
-  "sha256": "ddae98c12b517ab95438dbf65583a211fe9b973d2afbd0a8b3d50a0babee20d6",
-  "releaseNotes": "应用更名为“拾件簿”，图标改为深青底色、米白标签卡，包含打孔、条码与取件勾选。同步更新首页、设置、小组件说明、安装提示和通知名称。使用原包名和签名，覆盖安装保留取件记录。此版本先发布到测试渠道。"
+  "apkUrl": "https://github.com/syczk301/pickup-assistant/releases/download/v0.5.6-beta.1/pickup-assistant-0.5.6.apk",
+  "sizeBytes": 2549690,
+  "sha256": "a393474830aabd57c70acfb794168d8f610362a55aea38140816f2c4a3ea46ff",
+  "releaseNotes": "应用内图标与“拾件簿”新品牌统一：底部包裹导航、待取和已取空列表中的立方体图标替换为标签卡，包含打孔、条码和取件勾选。保留图标的选中状态和深色模式着色。包名和签名不变，覆盖安装保留取件记录。先发布到测试渠道，正式发布需评审通过。"
 }
