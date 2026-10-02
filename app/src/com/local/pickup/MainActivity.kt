@@ -45,10 +45,14 @@ class MainActivity : Activity() {
     private var addSnapshot: (() -> Bundle)? = null
     private var addDraft: Bundle? = null
     private var pendingImage: Uri? = null
+    private var updateStatus: TextView? = null
     @Volatile private var scanning = false
     private val listener =
         SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
             if (key == "parcels" && !scanning) handler.post { if (!isDestroyed) render() }
+            if (key in setOf("update_phase", "update_error", "update_ready")) handler.post {
+                if (!isDestroyed) updateStatus?.text = "当前版本 ${updates.version()} · ${UpdateFiles.status(this)}"
+            }
         }
 
     override fun onCreate(saved: Bundle?) {
@@ -182,6 +186,7 @@ class MainActivity : Activity() {
     private fun date(time: Long) = SimpleDateFormat("MM-dd HH:mm", Locale.CHINA).format(Date(time))
 
     private fun render() {
+        updateStatus = null
         settingsSummaries.clear()
         dark = Store.prefs(this).getBoolean("dark", false)
         ink = if (dark) 0xffeef5fc.toInt() else 0xff08263c.toInt()
@@ -862,18 +867,21 @@ class MainActivity : Activity() {
         title: String,
         description: String?,
         action: () -> Unit,
-    ) {
+    ): TextView? {
+        var detail: TextView? = null
         val layout =
             col().apply {
                 setPadding(0, dp(12), 0, dp(12))
                 addView(text("$title  ›", 16, ink, true))
                 if (description != null) {
                     space(this, 5)
-                    addView(text(description, 12, muted))
+                    detail = text(description, 12, muted)
+                    addView(detail)
                 }
                 setOnClickListener { action() }
             }
         c.addView(layout)
+        return detail
     }
 
     private fun toggle(
@@ -1046,7 +1054,7 @@ class MainActivity : Activity() {
                     dialog.dismiss(); render()
                 }.setNegativeButton("取消", null).show()
         }
-        settingRow(update, "检查更新", "当前版本 ${updates.version()} · ${UpdateFiles.status(this)}") {
+        updateStatus = settingRow(update, "检查更新", "当前版本 ${updates.version()} · ${UpdateFiles.status(this)}") {
             updates.check(true)
         }
         toggle(update, "自动检查更新", "每天首次打开时检查新版本", "auto_update", true)

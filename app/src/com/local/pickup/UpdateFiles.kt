@@ -57,6 +57,8 @@ object UpdateFiles {
     fun status(c: Context): String =
         when {
             Store.prefs(c).getBoolean("update_ready", false) -> "安装包已下载，点击安装"
+            UpdateDownloadService.busy(c) -> "正在下载，点击查看进度"
+            Store.prefs(c).getString("update_phase", "") == "cancelled" -> "下载已取消，点击重新下载"
             Store.prefs(c).getLong("update_download_id", -1) != -1L -> "正在下载，点击查看进度"
             else -> Store.prefs(c).getString("update_error", "").orEmpty().ifEmpty { "查看是否有新版本" }
         }

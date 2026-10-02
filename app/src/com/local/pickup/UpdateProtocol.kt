@@ -223,7 +223,7 @@ object UpdateProtocol {
                         while (count < data.size) { val n = input.read(data, count, data.size - count); if (n < 0) break; count += n }
                         if (count < 4 || data[0] != 0x50.toByte() || data[1] != 0x4b.toByte()) throw IOException("线路未返回安装包")
                     }
-                    // Let DownloadManager obtain a fresh redirect; probe URLs can expire.
+                    // The actual transfer obtains a fresh redirect; signed probe URLs can expire.
                     return source
                 }
             } finally { connection.disconnect() }

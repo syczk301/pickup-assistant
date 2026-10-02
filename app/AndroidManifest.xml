@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.local.pickup" android:versionCode="27" android:versionName="0.5.10">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.local.pickup" android:versionCode="28" android:versionName="0.5.11">
  <uses-sdk android:minSdkVersion="26" android:targetSdkVersion="34"/>
  <uses-permission android:name="android.permission.RECEIVE_SMS"/>
  <uses-permission android:name="android.permission.READ_SMS"/>
  <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
  <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
  <uses-permission android:name="android.permission.INTERNET"/>
+ <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+ <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC"/>
  <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>
  <uses-feature android:name="android.hardware.telephony" android:required="false"/>
  <queries><package android:name="com.taobao.taobao"/><package android:name="com.cainiao.wireless"/><package android:name="com.xunmeng.pinduoduo"/></queries>
@@ -13,6 +15,8 @@
   <activity android:name=".MainActivity" android:exported="true" android:windowSoftInputMode="adjustResize|stateAlwaysHidden">
    <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>
   </activity>
+  <activity android:name=".UpdateDownloadActivity" android:exported="false" android:launchMode="singleTop"/>
+  <service android:name=".UpdateDownloadService" android:exported="false" android:foregroundServiceType="dataSync"/>
   <receiver android:name=".SmsReceiver" android:exported="true" android:permission="android.permission.BROADCAST_SMS"><intent-filter><action android:name="android.provider.Telephony.SMS_RECEIVED"/></intent-filter></receiver>
   <receiver android:name=".ReminderReceiver" android:exported="false"><intent-filter><action android:name="android.intent.action.BOOT_COMPLETED"/></intent-filter></receiver>
   <receiver android:name=".PickupWidget" android:label="@string/widget_list_name" android:exported="false"><intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE"/><action android:name="android.intent.action.MY_PACKAGE_REPLACED"/></intent-filter><meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_info"/></receiver>

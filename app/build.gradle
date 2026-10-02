@@ -5,7 +5,7 @@ plugins {
 android {
  namespace 'com.local.pickup'
  compileSdk 35
- defaultConfig { applicationId 'com.local.pickup'; minSdk 26; targetSdk 34; versionCode 27; versionName '0.5.10' }
+ defaultConfig { applicationId 'com.local.pickup'; minSdk 26; targetSdk 34; versionCode 28; versionName '0.5.11' }
  sourceSets { main { manifest.srcFile 'AndroidManifest.xml'; java.srcDirs = ['src']; res.srcDirs = ['res'] } }
  sourceSets { main { assets.srcDirs = ['build/ocr-assets']; jniLibs.srcDirs = ['build/ocr-jni'] } }
  compileOptions { sourceCompatibility JavaVersion.VERSION_1_8; targetCompatibility JavaVersion.VERSION_1_8 }

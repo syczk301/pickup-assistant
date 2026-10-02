@@ -10,6 +10,7 @@ class UpdateDownloadReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action != DownloadManager.ACTION_DOWNLOAD_COMPLETE) return
         val id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1)
+        if (Store.prefs(context).getString("update_engine", "") == "app") return
         if (id == -1L || id != Store.prefs(context).getLong("update_download_id", -1)) return
         val pending = goAsync()
         Thread(
@@ -37,6 +38,7 @@ class UpdateDownloadReceiver : BroadcastReceiver() {
         }
 
         fun complete(c: Context, id: Long): Boolean {
+            if (Store.prefs(c).getString("update_engine", "") == "app") return false
             try {
                 val dm = c.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
                 dm.query(DownloadManager.Query().setFilterById(id)).use { cursor ->

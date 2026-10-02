@@ -1,6 +1,6 @@
 # 拾件簿
 
-原生 Kotlin Android 应用，包名 `com.local.pickup`，最低 Android 8.0。当前测试版 0.5.10 Beta 1，版本号 27；正式版 0.5.5，MIT 许可证。
+原生 Kotlin Android 应用，包名 `com.local.pickup`，最低 Android 8.0。当前测试版 0.5.11 Beta 1，版本号 28；正式版 0.5.5，MIT 许可证。
 
 应用模块均使用 Kotlin；短信、图片识别和取件记录在本机处理。支持短信提取、粘贴识别、记录管理、统计、提醒、小组件、JSON 备份和 GitHub 在线更新。
 
@@ -16,7 +16,7 @@
 
 ## 测试
 
-`tests/ParserTest.kt` 和 `UpdateProtocolTest.kt` 分别覆盖 17 项短信解析和 35 项更新协议检查。`tests/MigrationTest.kt` 验证旧版 JSON 字段、默认值、往返和无效记录拒绝。测试需要先构建，再设置 `JSON_TEST_JAR` 为 org.json:json:20240303 的 JAR 路径，运行 `python app\test.py`。Android 应用使用系统 JSON API。
+`tests/ParserTest.kt` 和 `UpdateProtocolTest.kt` 分别覆盖 17 项短信解析和 35 项更新协议检查。`UpdateTransferTest.kt` 通过本地 HTTP 响应夹具检查 27 项下载行为：HTTPS 地址与跳转验证、续传位置、服务器忽略 Range、连接中断、字节上限及取消。生产下载使用系统 HTTPS 连接和默认证书校验。`tests/MigrationTest.kt` 验证旧版 JSON 字段、默认值、往返和无效记录拒绝。测试需要先构建，再设置 `JSON_TEST_JAR` 为 org.json:json:20240303 的 JAR 路径，运行 `python app\test.py`。Android 应用使用系统 JSON API。
 
 测试全部使用 Kotlin。旧版模拟器操作和中文输入辅助脚本已移除。
 
@@ -27,6 +27,8 @@
 默认通过 GitHub API 直接读取根目录 `update.json`，失败时依次尝试 Raw、jsDelivr 和 Release 入口。旧版保存的内置地址自动走这些通道，自定义地址保持不变。发布新版时需同步根目录版本文件与 Release 资产，确保版本号、大小和 SHA-256 一致。
 
 在设置中检查并下载新版本，安装前校验大小、SHA-256、包名、版本和签名，再由安卓系统确认。原 Java 版本的包名、签名、SharedPreferences 名称和 JSON 格式保持兼容。
+
+0.5.11 起，下载进度使用独立页面，应用自己的 HTTPS 下载器在 dataSync 前台服务中执行。返回或切换应用继续下载；失败留在页面显示原因，进度和状态写入本机，设置页可重新打开。中断后的重试校验 HTTP Content-Range，并在服务器忽略 Range 时重新下载。校验后的文件才交给安装器；通知未授权时仍可下载。旧系统下载任务停止后提供明确的重试入口。下载诊断仅包含更新状态、手机型号、HTTP 主机／状态及字节数，不含包裹记录、图片或临时下载链接参数；由用户主动复制，不自动上传。旧版更新入口失败时，需要用手机浏览器下载新 APK 覆盖安装。
 
 ## 界面
 
@@ -65,6 +67,7 @@
 | POST_NOTIFICATIONS | 新包裹通知、每日提醒、更新就绪通知 | 用户开启新包裹通知或每日提醒（Android13及以上） |
 | RECEIVE_BOOT_COMPLETED | 重启后恢复已开启的每日提醒 | 系统安装时授予 |
 | INTERNET | GitHub版本检查、APK下载 | 系统安装时授予 |
+| FOREGROUND_SERVICE / FOREGROUND_SERVICE_DATA_SYNC | 用户发起更新后持续下载 APK | 普通权限，安装时授予，无新运行时授权 |
 | REQUEST_INSTALL_PACKAGES | 安装已下载并校验的新版本 | 用户点击安装更新时前往系统设置授权 |
 
 手动添加、粘贴识别和本地备份无需短信、通知或存储权限。短信与取件记录在本机处理；联网只用于更新检查和下载。保留扫描功能，因此仍声明读取短信权限，但不再与接收短信和通知一起申请。历史已授予的权限不会被这一版本自动撤销，可在系统应用设置中调整。
