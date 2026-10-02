@@ -1,6 +1,6 @@
 # 拾件簿
 
-原生 Kotlin Android 应用，包名 `com.local.pickup`，最低 Android 8.0。当前测试版本 0.5.5，版本号 22；正式渠道为 0.5.3，MIT 许可证。
+原生 Kotlin Android 应用，包名 `com.local.pickup`，最低 Android 8.0。当前测试版本 0.5.5，版本号 22；正式渠道为 0.5.4，MIT 许可证。
 
 应用的 14 个模块均使用 Kotlin；短信和取件记录在本机处理。支持短信提取、粘贴识别、记录管理、统计、提醒、小组件、JSON 备份和 GitHub 在线更新。
 
@@ -83,6 +83,6 @@
 
 正式评审：打开 GitHub Actions 的 Review and promote Beta to stable，Run workflow，填写测试标签。inspect 任务验证包名、版本、签名、SHA-256 和源码包，生成评审候选。production 任务必须经过仓库负责人 syczk301 在 GitHub 上批准；只有 main 分支允许执行。未经批准不会更新正式入口。流程重新检查候选没有变化，再将同一 APK 发布为正式 Release 并更新 update.json。评审前可查看候选记录、测试结果及手机效果；有修改应发布新 Beta 后重新评审。
 
-正式发布无需上传签名私钥到 GitHub；所有 APK 在本地签名。当前 Beta 的发布和待审批不会改变正式版 0.5.3。
+正式发布无需上传签名私钥到 GitHub；所有 APK 在本地签名。Beta 发布与待审批不会更新正式入口。
 
 0.5.5 Beta 1 应用更名为拾件簿，启动图标改为深青底色的标签卡，包含打孔、条码和取件勾选。包名和签名保持兼容，覆盖安装保留本地数据。
