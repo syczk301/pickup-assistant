@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "packageName": "com.local.pickup",
+  "channel": "beta",
+  "versionCode": 21,
+  "versionName": "0.5.4",
+  "minSdk": 26,
+  "apkUrl": "https://github.com/syczk301/pickup-assistant/releases/download/v0.5.4-beta.1/pickup-assistant-0.5.4.apk",
+  "sizeBytes": 2545257,
+  "sha256": "3c0d9aa4d74a4b16cf405433faf8dc7f115e08902d802e2e7b3d4423447d87b5",
+  "releaseNotes": "新增正式版和测试版更新渠道，默认正式版。测试渠道提前体验，正式渠道仅接收评审通过的更新。切换渠道取消旧下载、提示和检查结果，不自动降级。基于0.5.3开发，未恢复流体云功能。此版本先用于测试，正式渠道仍为0.5.3。"
+}

@@ -953,7 +953,15 @@ class MainActivity : Activity() {
                 .setPositiveButton("知道了", null)
                 .show()
         }
-        val update = settingsGroup("update", "应用更新") { "${updates.version()} · ${if (prefs.getBoolean("auto_update", true)) "自动检查已开启" else "自动检查已关闭"}" }
+        val update = settingsGroup("update", "应用更新") { "${updates.version()} · ${updates.channelLabel()} · ${if (prefs.getBoolean("auto_update", true)) "自动检查已开启" else "自动检查已关闭"}" }
+        settingRow(update, "更新渠道", "${updates.channelLabel()} · 正式版经评审后发布，测试版提前体验") {
+            AppDialogs.Builder(this).setTitle("选择更新渠道")
+                .setMessage("正式版仅接收审核通过的更新。测试版用于提前体验；切回正式版不会自动降级。切换渠道会取消正在下载的更新。")
+                .setSingleChoiceItems(arrayOf("正式版（推荐）", "测试版"), if (updates.channel() == UpdateProtocol.BETA) 1 else 0) { dialog, index ->
+                    updates.changeChannel(if (index == 1) UpdateProtocol.BETA else UpdateProtocol.STABLE)
+                    dialog.dismiss(); render()
+                }.setNegativeButton("取消", null).show()
+        }
         settingRow(update, "检查更新", "当前版本 ${updates.version()} · ${UpdateFiles.status(this)}") {
             updates.check(true)
         }

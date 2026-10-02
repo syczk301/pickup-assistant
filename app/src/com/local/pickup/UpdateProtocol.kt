@@ -16,19 +16,34 @@ object UpdateProtocol {
         LEGACY_SOURCE,
     )
 
+    const val STABLE = "stable"
+    const val BETA = "beta"
+    val BETA_SOURCES = listOf(
+        "https://api.github.com/repos/syczk301/pickup-assistant/contents/update-beta.json?ref=main",
+        "https://raw.githubusercontent.com/syczk301/pickup-assistant/main/update-beta.json",
+        "https://cdn.jsdelivr.net/gh/syczk301/pickup-assistant@main/update-beta.json",
+    )
+    fun channel(value: String) = if (value == BETA) BETA else STABLE
+
     // Custom sources remain explicit; old built-in addresses migrate to the API route.
-    fun sourceCandidates(stored: String): List<String> =
-        if (stored.isBlank() || stored in SOURCES) SOURCES else listOf(stored)
+    fun sourceCandidates(stored: String, channel: String = STABLE): List<String> =
+        if (channel(channel) == BETA) BETA_SOURCES
+        else if (stored.isBlank() || stored in SOURCES || stored in BETA_SOURCES) SOURCES else listOf(stored)
 
     fun fetchAny(
         sources: List<String>,
         pkg: String,
+        expectedChannel: String? = null,
         request: (String, String) -> Release = ::fetch,
     ): Release {
         var failure: IOException? = null
         for (source in sources.distinct()) {
             if (Thread.currentThread().isInterrupted) throw InterruptedIOException("更新检查已取消")
-            try { return request(source, pkg) }
+            try {
+                val release = request(source, pkg)
+                if (expectedChannel != null && release.channel != channel(expectedChannel)) throw IOException("更新文件与所选渠道不匹配")
+                return release
+            }
             catch (e: IOException) { failure = e }
         }
         throw IOException(failureMessage(failure), failure)
@@ -52,6 +67,7 @@ object UpdateProtocol {
         @JvmField val hash: String,
         @JvmField val notes: String,
         @JvmField val json: String,
+        @JvmField val channel: String = STABLE,
     )
 
     @JvmStatic
@@ -79,6 +95,8 @@ object UpdateProtocol {
             val j = JSONObject(raw)
             if (j.getInt("schemaVersion") != 1 || j.getString("packageName") != packageName)
                 throw IOException("版本文件与本应用不匹配")
+            val channel = j.optString("channel", STABLE)
+            if (channel != STABLE && channel != BETA) throw IOException("更新渠道无效")
             val code = j.getLong("versionCode")
             val size = j.getLong("sizeBytes")
             val min = j.optInt("minSdk", 26)
@@ -97,7 +115,7 @@ object UpdateProtocol {
                     !hash.matches(Regex("[0-9a-f]{64}"))
             )
                 throw IOException("版本文件字段不完整或超出范围")
-            return Release(code.toInt(), min, size, name, url, hash, notes, raw)
+            return Release(code.toInt(), min, size, name, url, hash, notes, raw, channel)
         } catch (e: JSONException) {
             throw IOException("无法读取版本文件，请检查 JSON 内容", e)
         }

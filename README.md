@@ -1,6 +1,6 @@
 # 取件助手
 
-原生 Kotlin Android 应用，包名 `com.local.pickup`，最低 Android 8.0。当前版本 0.5.3，版本号 18，MIT 许可证。
+原生 Kotlin Android 应用，包名 `com.local.pickup`，最低 Android 8.0。当前测试版本 0.5.4，版本号 21；正式渠道为 0.5.3，MIT 许可证。
 
 应用的 14 个模块均使用 Kotlin；短信和取件记录在本机处理。支持短信提取、粘贴识别、记录管理、统计、提醒、小组件、JSON 备份和 GitHub 在线更新。
 
@@ -16,7 +16,7 @@
 
 ## 测试
 
-`tests/ParserTest.kt` 和 `UpdateProtocolTest.kt` 分别覆盖 17 项短信解析和 25 项更新协议检查。`tests/MigrationTest.kt` 验证旧版 JSON 字段、默认值、往返和无效记录拒绝。测试需要先构建，再设置 `JSON_TEST_JAR` 为 org.json:json:20240303 的 JAR 路径，运行 `python app\test.py`。Android 应用使用系统 JSON API。
+`tests/ParserTest.kt` 和 `UpdateProtocolTest.kt` 分别覆盖 17 项短信解析和 35 项更新协议检查。`tests/MigrationTest.kt` 验证旧版 JSON 字段、默认值、往返和无效记录拒绝。测试需要先构建，再设置 `JSON_TEST_JAR` 为 org.json:json:20240303 的 JAR 路径，运行 `python app\test.py`。Android 应用使用系统 JSON API。
 
 测试全部使用 Kotlin。旧版模拟器操作和中文输入辅助脚本已移除。
 
@@ -72,3 +72,15 @@
 0.5.2 设置页分为短信识别、通知与提醒、显示与数据、应用更新、关于五个可折叠分组，默认收起并显示状态摘要。切换页面及配置重建保留展开状态，开关变化即时更新摘要。
 
 0.5.3 更新提示、下载进度和更新结果使用应用内浮层，避免独立系统弹窗在部分手机上出现后消失。浮层不会因外侧触摸关闭，支持明确的按钮与返回键，长更新说明可滚动，大字体时按钮竖排。进入前台和销毁页面的保护保留。录屏可观察到弹窗消失后仍停留在设置页；未取得该手机日志，不能据此断言进程崩溃原因。
+
+## 测试版和正式版
+
+应用默认正式渠道，设置 → 应用更新 → 更新渠道可选择测试版。正式渠道仅读取 update.json，测试渠道仅读取 update-beta.json；测试渠道不会回退正式入口。切换时取消旧下载、旧提示及旧检查结果；不会自动降级。旧版 0.5.3 用户继续接收正式更新。
+
+新功能只发布 GitHub Pre-release，命名 vX.Y.Z-beta.N。应用内部 versionName 使用 X.Y.Z，测试阶段由发布标签和更新渠道标识；正式审核后复用同一个 APK，保持 SHA-256、签名及内部版本号不变。内部 versionCode 跨渠道递增，已用过的 19、20 不再使用。
+
+发布测试版：修改清单和 Gradle 中的版本；运行 build.py、test.py；写入上一级 deliverables/beta-release-notes.txt。设置具有 contents/workflows 写权限的 GITHUB_TOKEN，然后运行 python app\release.py beta v0.5.4-beta.1。脚本验证签名和 APK 版本，上传测试 APK、源码及测试版本文件，保留正式版本文件不变。失败或结果未知时先检查远端发布状态，不直接重复执行。
+
+正式评审：打开 GitHub Actions 的 Review and promote Beta to stable，Run workflow，填写测试标签。inspect 任务验证包名、版本、签名、SHA-256 和源码包，生成评审候选。production 任务必须经过仓库负责人 syczk301 在 GitHub 上批准；只有 main 分支允许执行。未经批准不会更新正式入口。流程重新检查候选没有变化，再将同一 APK 发布为正式 Release 并更新 update.json。评审前可查看候选记录、测试结果及手机效果；有修改应发布新 Beta 后重新评审。
+
+正式发布无需上传签名私钥到 GitHub；所有 APK 在本地签名。当前 Beta 的发布和待审批不会改变正式版 0.5.3。

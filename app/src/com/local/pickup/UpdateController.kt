@@ -23,6 +23,7 @@ class UpdateController(private val activity: Activity) {
     private var progressDialog: UpdatePanel? = null
     private var visible = false
     private val deferredUi = mutableListOf<() -> Unit>()
+    private var checkGeneration = 0
     private var checking = false
     private var verifying = false
     private var closed = false
@@ -59,6 +60,21 @@ class UpdateController(private val activity: Activity) {
     }
 
     private fun source() = Store.prefs(context).getString("update_source", DEFAULT_SOURCE).orEmpty().ifEmpty { DEFAULT_SOURCE }
+
+    fun channel() = UpdateProtocol.channel(Store.prefs(context).getString("update_channel", UpdateProtocol.STABLE).orEmpty())
+    fun channelLabel() = if (channel() == UpdateProtocol.BETA) "测试版" else "正式版"
+    fun changeChannel(value: String) {
+        val next = UpdateProtocol.channel(value)
+        if (next == channel()) return
+        checkGeneration++
+        checking = false
+        deferredUi.clear()
+        UpdatePanel.close(activity)
+        cancelDownload()
+        Store.prefs(context).edit().putString("update_channel", next)
+            .putLong("update_last_check", 0).remove("update_prompted")
+            .putBoolean("update_install_permission", false).apply()
+    }
 
     fun version() =
         context.packageManager.getPackageInfo(context.packageName, 0).versionName.orEmpty()
@@ -141,18 +157,22 @@ class UpdateController(private val activity: Activity) {
             return
         }
         val url = source()
+        val selectedChannel = channel()
+        val generation = ++checkGeneration
+        val candidates = UpdateProtocol.sourceCandidates(url, selectedChannel)
         checking = true
         Store.prefs(context).edit().putLong("update_last_check", System.currentTimeMillis()).apply()
         if (manual) Toast.makeText(activity, "正在检查更新…", Toast.LENGTH_SHORT).show()
         background {
             try {
-                val release = UpdateProtocol.fetchAny(UpdateProtocol.sourceCandidates(url), context.packageName)
+                val release = UpdateProtocol.fetchAny(candidates, context.packageName, selectedChannel)
                 ui {
+                    if (generation != checkGeneration || selectedChannel != channel()) return@ui
                     checking = false
                     if (url == source())
                         when {
                             release.code <= versionCode() ->
-                                if (manual) message("已是最新版本", "当前版本 ${version()}")
+                                if (manual) message("暂无可用更新", "${channelLabel()}渠道 · 当前版本 ${version()}\n此渠道没有更高版本；切换渠道不会自动降级。")
                             release.minSdk > Build.VERSION.SDK_INT ->
                                 if (manual)
                                     message("暂不支持此更新", "新版本需要 Android API ${release.minSdk} 或更高版本。")
@@ -164,7 +184,7 @@ class UpdateController(private val activity: Activity) {
                                     .putInt("update_prompted", release.code)
                                     .apply()
                                 UpdatePanel.Builder(activity)
-                                    .setTitle("发现新版本 ${release.name}")
+                                    .setTitle("${channelLabel()}更新 ${release.name}")
                                     .setMessage(
                                         release.notes.ifEmpty { "有新版本可用。" } +
                                             String.format(
@@ -181,6 +201,7 @@ class UpdateController(private val activity: Activity) {
                 }
             } catch (e: Exception) {
                 ui {
+                    if (generation != checkGeneration || selectedChannel != channel()) return@ui
                     checking = false
                     if (manual) message("检查更新失败", UpdateProtocol.failureMessage(e))
                 }

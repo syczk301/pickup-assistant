@@ -42,6 +42,19 @@ fun main() {
     check(UpdateProtocol.sourceCandidates("") == UpdateProtocol.SOURCES)
     check(UpdateProtocol.sourceCandidates("https://example.com/custom.json") == listOf("https://example.com/custom.json"))
     count += 3
+    check(UpdateProtocol.sourceCandidates("", UpdateProtocol.BETA) == UpdateProtocol.BETA_SOURCES)
+    check(UpdateProtocol.sourceCandidates(UpdateProtocol.LEGACY_SOURCE, UpdateProtocol.BETA).none { it in UpdateProtocol.SOURCES })
+    check(UpdateProtocol.sourceCandidates("", "unknown") == UpdateProtocol.SOURCES)
+    check(UpdateProtocol.sourceCandidates(UpdateProtocol.BETA_SOURCES.first(), UpdateProtocol.STABLE) == UpdateProtocol.SOURCES)
+    check(release.channel == UpdateProtocol.STABLE)
+    val beta = UpdateProtocol.parse(valid().put("channel", "beta").toString(), "com.local.pickup")
+    check(beta.channel == UpdateProtocol.BETA)
+    count += 6
+    rejected { UpdateProtocol.parse(valid().put("channel", "wrong").toString(), "com.local.pickup") }
+    rejected { UpdateProtocol.fetchAny(listOf("bad"), "com.local.pickup", UpdateProtocol.STABLE) { _, _ -> beta } }
+    rejected { UpdateProtocol.fetchAny(listOf("bad"), "com.local.pickup", UpdateProtocol.BETA) { _, _ -> release } }
+    check(UpdateProtocol.fetchAny(listOf("bad", "good"), "com.local.pickup", UpdateProtocol.STABLE) { url, _ -> if (url == "bad") beta else release } == release)
+    count++
     val attempts = mutableListOf<String>()
     val fallback = UpdateProtocol.fetchAny(listOf("primary", "backup", "unused"), "com.local.pickup") { url, pkg ->
         check(pkg == "com.local.pickup")

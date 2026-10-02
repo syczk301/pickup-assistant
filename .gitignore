@@ -1,8 +1,6 @@
-.tools/
-deliverables/
-**/build/
-**/.gradle/
-**/local.properties
+/build/
+/.gradle/
+/local.properties
 *.jks
 *.keystore
 *.apk
