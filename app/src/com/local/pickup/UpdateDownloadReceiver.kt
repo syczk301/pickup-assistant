@@ -26,15 +26,29 @@ class UpdateDownloadReceiver : BroadcastReceiver() {
     }
 
     companion object {
+        private fun downloadFailure(reason: Int): String = when {
+            reason == DownloadManager.ERROR_INSUFFICIENT_SPACE -> "手机空间不足，请清理空间后重试。"
+            reason == DownloadManager.ERROR_DEVICE_NOT_FOUND -> "下载目录不可用，请检查存储空间后重试。"
+            reason == DownloadManager.ERROR_CANNOT_RESUME -> "网络中断后无法续传，请重试下载。"
+            reason == DownloadManager.ERROR_HTTP_DATA_ERROR -> "下载连接中断，请切换网络后重试。"
+            reason == DownloadManager.ERROR_TOO_MANY_REDIRECTS -> "下载地址跳转异常，请重试。"
+            reason in 400..599 -> "下载服务器返回 HTTP $reason，请切换网络或重试下载。"
+            else -> "系统下载失败（原因 $reason），请重试下载。"
+        }
+
         fun complete(c: Context, id: Long): Boolean {
             try {
                 val dm = c.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
                 dm.query(DownloadManager.Query().setFilterById(id)).use { cursor ->
-                    if (cursor == null || !cursor.moveToFirst()) throw IOException("下载记录不存在，请重试")
+                    // A temporary provider miss must not discard an active download.
+                    if (cursor == null || !cursor.moveToFirst()) return false
                     when (
                         cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS))
                     ) {
-                        DownloadManager.STATUS_FAILED -> throw IOException("安装包下载失败，请重试")
+                        DownloadManager.STATUS_FAILED -> {
+                            val reason = cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_REASON))
+                            throw IOException(downloadFailure(reason))
+                        }
                         DownloadManager.STATUS_SUCCESSFUL -> Unit
                         else -> return false
                     }

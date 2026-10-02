@@ -21,6 +21,7 @@ class UpdateController(private val activity: Activity) {
     private var startingDownload = false
     private var downloadGeneration = 0
     private var progressDialog: UpdatePanel? = null
+    private var readyDialog: UpdatePanel? = null
     private var visible = false
     private val deferredUi = mutableListOf<() -> Unit>()
     private var checkGeneration = 0
@@ -55,6 +56,7 @@ class UpdateController(private val activity: Activity) {
         downloadGeneration++
         progressDialog?.dismiss()
         progressDialog = null
+        readyDialog = null
         handler.removeCallbacksAndMessages(null)
         worker.shutdownNow()
     }
@@ -94,6 +96,7 @@ class UpdateController(private val activity: Activity) {
     private fun cancelDownload() {
         startingDownload = false
         downloadGeneration++
+        progressDialog?.dismiss()
         synchronized(UpdateFiles) {
             val id = Store.prefs(context).getLong("update_download_id", -1)
             if (id != -1L)
@@ -105,6 +108,8 @@ class UpdateController(private val activity: Activity) {
                 .edit()
                 .putLong("update_download_id", -1)
                 .putBoolean("update_ready", false)
+                .putBoolean("update_selecting", false)
+                .putBoolean("update_progress_visible", false)
                 .remove("update_release")
                 .remove("update_error")
                 .commit()
@@ -112,7 +117,8 @@ class UpdateController(private val activity: Activity) {
         }
     }
 
-    fun pause() { visible = false; progressDialog?.dismiss() }
+    // This panel belongs to the Activity's decor. Keep it through a temporary pause.
+    fun pause() { visible = false }
 
     fun dismissPanel() = UpdatePanel.dismissTop(activity)
 
@@ -129,13 +135,25 @@ class UpdateController(private val activity: Activity) {
             return
         }
         val id = Store.prefs(context).getLong("update_download_id", -1)
+        val restoreProgress = Store.prefs(context).getBoolean("update_progress_visible", false)
         when {
-            id != -1L ->
+            id != -1L -> {
+                if (restoreProgress) progress()
                 background {
                     UpdateDownloadReceiver.complete(context, id)
-                    ui { offerReady(false) }
+                    ui { if (progressDialog?.isOpen != true) offerReady(false) }
                 }
-            Store.prefs(context).getBoolean("update_ready", false) -> offerReady(false)
+            }
+            Store.prefs(context).getBoolean("update_ready", false) -> {
+                if (progressDialog?.isOpen != true) offerReady(restoreProgress)
+            }
+            Store.prefs(context).getBoolean("update_selecting", false) && !startingDownload -> {
+                try { download(UpdateFiles.pending(context), restoreProgress) }
+                catch (_: IOException) {
+                    Store.prefs(context).edit().putBoolean("update_selecting", false).apply()
+                }
+            }
+            restoreProgress && Store.prefs(context).getString("update_error", "").orEmpty().isNotEmpty() -> progress()
             Store.prefs(context).getBoolean("auto_update", true) &&
                 source().isNotEmpty() &&
                 System.currentTimeMillis() - Store.prefs(context).getLong("update_last_check", 0) >
@@ -209,16 +227,30 @@ class UpdateController(private val activity: Activity) {
         }
     }
 
-    private fun download(release: UpdateProtocol.Release) {
+    private fun download(release: UpdateProtocol.Release, showProgress: Boolean = true) {
         if (!live() || startingDownload) return
         startingDownload = true
         val generation = ++downloadGeneration
-        progress()
+        Store.prefs(context).edit().putString("update_release", release.json)
+            .putString("update_error", "").putBoolean("update_ready", false)
+            .putBoolean("update_selecting", true)
+            .putBoolean("update_progress_visible", showProgress).commit()
+        if (showProgress) progress()
         background {
-            val downloadUrl = UpdateProtocol.selectDownloadUrl(release)
-            ui {
-                if (!startingDownload || generation != downloadGeneration) return@ui
-                enqueue(release, downloadUrl)
+            try {
+                val downloadUrl = UpdateProtocol.selectDownloadUrl(release)
+                ui {
+                    if (!startingDownload || generation != downloadGeneration) return@ui
+                    enqueue(release, downloadUrl)
+                }
+            } catch (e: Exception) {
+                ui {
+                    if (generation != downloadGeneration) return@ui
+                    startingDownload = false
+                    Store.prefs(context).edit().putBoolean("update_selecting", false)
+                        .putString("update_error", UpdateProtocol.failureMessage(e)).commit()
+                    if (Store.prefs(context).getBoolean("update_progress_visible", false)) progress()
+                }
             }
         }
     }
@@ -228,7 +260,7 @@ class UpdateController(private val activity: Activity) {
             synchronized(UpdateFiles) {
                 if (Store.prefs(context).getLong("update_download_id", -1) != -1L) {
                     startingDownload = false
-            progress()
+                    if (Store.prefs(context).getBoolean("update_progress_visible", false)) progress()
                     return
                 }
                 val file = UpdateFiles.file(context, release)
@@ -238,6 +270,9 @@ class UpdateController(private val activity: Activity) {
                         .setTitle("拾件簿 ${release.name}")
                         .setDescription("正在下载更新")
                         .setMimeType("application/vnd.android.package-archive")
+                        .addRequestHeader("User-Agent", "PickupAssistant-Android")
+                        .addRequestHeader("Accept", "application/octet-stream")
+                        .addRequestHeader("Cache-Control", "no-cache")
                         .setNotificationVisibility(
                             DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED
                         )
@@ -254,30 +289,39 @@ class UpdateController(private val activity: Activity) {
                     (context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager).enqueue(
                         request
                     )
-                Store.prefs(context).edit().putLong("update_download_id", id).commit()
+                Store.prefs(context).edit().putLong("update_download_id", id)
+                    .putBoolean("update_selecting", false).commit()
             }
             startingDownload = false
-            progress()
+            if (Store.prefs(context).getBoolean("update_progress_visible", false)) progress()
         } catch (e: Exception) {
             startingDownload = false
-            message("无法开始下载", e.message)
+            Store.prefs(context).edit().putBoolean("update_selecting", false)
+                .putString("update_error", e.message ?: "无法开始下载，请重试").commit()
+            if (Store.prefs(context).getBoolean("update_progress_visible", false)) progress()
         }
     }
 
     private fun progress() {
-        if (!live() || progressDialog?.isShowing == true) return
+        if (!live() || progressDialog?.isOpen == true) return
+        Store.prefs(context).edit().putBoolean("update_progress_visible", true).apply()
         val dialog =
             UpdatePanel.Builder(activity)
                 .setTitle("下载更新")
                 .setMessage("正在下载，完成后会校验安装包。")
                 .setNegativeButton("取消下载") { _, _ -> cancelDownload() }
-                .setPositiveButton("后台下载", null)
+                .setPositiveButton("后台下载") { _, _ ->
+                    Store.prefs(context).edit().putBoolean("update_progress_visible", false).apply()
+                }
                 .create()
         progressDialog = dialog
-        dialog.setOnDismissListener { if (progressDialog === dialog) progressDialog = null }
-        dialog.show()
+        dialog.setOnDismissListener {
+            if (progressDialog === dialog) progressDialog = null
+            if (!closed) Store.prefs(context).edit().putBoolean("update_progress_visible", false).apply()
+        }
         var previousBytes = 0L
         var previousTime = System.currentTimeMillis()
+        var missingReads = 0
         val poll =
             object : Runnable {
                 override fun run() {
@@ -294,11 +338,8 @@ class UpdateController(private val activity: Activity) {
                         return
                     }
                     if (id == -1L) {
-                        dialog.dismiss()
-                        Store.prefs(context)
-                            .getString("update_error", "")
-                            ?.takeIf { it.isNotEmpty() }
-                            ?.let { message("下载更新失败", it) }
+                        showDownloadFailure(dialog, Store.prefs(context).getString("update_error", "").orEmpty()
+                            .ifEmpty { "下载任务已中断，请重试。" })
                         return
                     }
                     try {
@@ -306,11 +347,26 @@ class UpdateController(private val activity: Activity) {
                             .query(DownloadManager.Query().setFilterById(id))
                             .use { cursor ->
                                 if (cursor == null || !cursor.moveToFirst()) {
-                                    dialog.dismiss()
-                                    cancelDownload()
-                                    message("下载已中断", "请重新检查更新并下载。")
+                                    missingReads++
+                                    if (missingReads >= 5) {
+                                        val error = "暂时无法读取系统下载任务。可以重试下载，或稍后重新查看进度。"
+                                        Store.prefs(context).edit().putString("update_error", error).apply()
+                                        showDownloadFailure(dialog, error)
+                                    } else if (Store.prefs(context).getString("update_error", "").orEmpty().isEmpty()) {
+                                        dialog.setMessage("正在读取下载进度…")
+                                    }
+                                    handler.postDelayed(this, 600)
                                     return
                                 }
+                                if (missingReads >= 5 || Store.prefs(context).getString("update_error", "").orEmpty().isNotEmpty()) {
+                                    Store.prefs(context).edit().putString("update_error", "").apply()
+                                    dialog.setTitle("下载更新")
+                                    dialog.setButton(DialogInterface.BUTTON_NEGATIVE, "取消下载") { _, _ -> cancelDownload() }
+                                    dialog.setButton(DialogInterface.BUTTON_POSITIVE, "后台下载") { _, _ ->
+                                        Store.prefs(context).edit().putBoolean("update_progress_visible", false).apply()
+                                    }
+                                }
+                                missingReads = 0
                                 val status =
                                     cursor.getInt(
                                         cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS)
@@ -332,6 +388,7 @@ class UpdateController(private val activity: Activity) {
                                 previousBytes = bytes; previousTime = now
                                 dialog.setMessage(
                                     when {
+                                        status == DownloadManager.STATUS_FAILED -> "下载失败，正在读取原因…"
                                         status == DownloadManager.STATUS_PAUSED ->
                                             "网络不可用或下载暂停，恢复网络后将继续。"
                                         status == DownloadManager.STATUS_SUCCESSFUL -> "下载完成，正在校验…"
@@ -351,29 +408,53 @@ class UpdateController(private val activity: Activity) {
                                 }
                             }
                     } catch (e: Exception) {
-                        dialog.dismiss()
-                        message("无法读取下载进度", e.message)
-                        return
+                        dialog.setMessage("暂时无法读取下载进度，正在重试…\n${e.message.orEmpty()}")
                     }
                     handler.postDelayed(this, 600)
                 }
             }
-        handler.post(poll)
+        dialog.setOnShowListener {
+            Store.prefs(context).getString("update_error", "").orEmpty().takeIf { it.isNotEmpty() }
+                ?.let { showDownloadFailure(dialog, it) }
+            handler.post(poll)
+        }
+        dialog.show()
+    }
+
+    private fun showDownloadFailure(dialog: UpdatePanel, error: String) {
+        dialog.setTitle("下载更新失败")
+        dialog.setMessage(error)
+        dialog.setButton(DialogInterface.BUTTON_NEGATIVE, "关闭") { _, _ ->
+            Store.prefs(context).edit().putBoolean("update_progress_visible", false).apply()
+        }
+        dialog.setButton(DialogInterface.BUTTON_POSITIVE, "重试下载") { _, _ ->
+            try {
+                val release = UpdateFiles.pending(context)
+                cancelDownload()
+                download(release)
+            } catch (e: Exception) { message("无法重试下载", e.message) }
+        }
     }
 
     private fun offerReady(manual: Boolean) {
-        if (!live() || !Store.prefs(context).getBoolean("update_ready", false)) return
+        if (!live() || !Store.prefs(context).getBoolean("update_ready", false) || readyDialog?.isOpen == true) return
         try {
             val release = UpdateFiles.pending(context)
             if (!manual && Store.prefs(context).getInt("update_ready_prompted", 0) == release.code)
                 return
-            Store.prefs(context).edit().putInt("update_ready_prompted", release.code).apply()
-            UpdatePanel.Builder(activity)
+            val dialog = UpdatePanel.Builder(activity)
                 .setTitle("更新已准备好")
                 .setMessage("拾件簿 ${release.name} 已完成校验。安装将保留已有取件记录。")
                 .setNegativeButton("稍后", null)
                 .setPositiveButton("安装") { _, _ -> install() }
-                .show()
+                .create()
+            readyDialog = dialog
+            dialog.setOnDismissListener { if (readyDialog === dialog) readyDialog = null }
+            dialog.setOnShowListener {
+                Store.prefs(context).edit().putInt("update_ready_prompted", release.code)
+                    .putBoolean("update_progress_visible", false).apply()
+            }
+            dialog.show()
         } catch (e: IOException) {
             message("更新不可用", e.message)
         }

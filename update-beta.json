@@ -2,11 +2,11 @@
   "schemaVersion": 1,
   "packageName": "com.local.pickup",
   "channel": "beta",
-  "versionCode": 25,
-  "versionName": "0.5.8",
+  "versionCode": 26,
+  "versionName": "0.5.9",
   "minSdk": 26,
-  "apkUrl": "https://github.com/syczk301/pickup-assistant/releases/download/v0.5.8-beta.1/pickup-assistant-0.5.8.apk",
-  "sizeBytes": 19185877,
-  "sha256": "540a0135d8afae59b8904d2954bd647d76ae58d6dcb52e969ebd47917cc83905",
-  "releaseNotes": "新增 2×2 取件小卡、4×1 取件横条、4×4 大号清单，保留原 4×2 清单和已放置的小组件。小卡与横条显示最新待取件，大清单最多显示 12 条。\n\n重新排版空状态，集中显示完成提示与打开入口；根据实际尺寸和字体大小自动调整布局、字号与显示条数。长取件码适配宽度，小尺寸优先显示待取数量和取件码。取件状态改变后四种规格同步刷新，覆盖升级时刷新旧卡片。\n\nAndroid 16 模拟器上通过 33 组原生小组件检查，覆盖正常、1.3 倍和 2 倍字体、空列表、长取件码、尺寸变化及点击跳转。包名、签名及权限保持兼容，可覆盖安装保留记录。"
+  "apkUrl": "https://github.com/syczk301/pickup-assistant/releases/download/v0.5.9-beta.1/pickup-assistant-0.5.9.apk",
+  "sizeBytes": 19194069,
+  "sha256": "35302a80d2a7655e460e1c5c9006fd5ac71feded9e27d85e396090fa54d36665",
+  "releaseNotes": "修复下载几秒后进度窗口消失：页面短暂暂停时保留进度，页面重建后恢复同一下载；主动选择后台下载或返回关闭后不会自动重开。\n\n进度轮询在窗口实际显示后启动，安装包校验完成后正常出现安装提示。下载失败持续显示具体原因并提供重试，系统下载记录暂时不可用时保留任务并重新读取。\n\n下载使用 GitHub 或官方资产 API 地址，由系统下载器获取新的重定向，避免复用探测时的临时地址。大小、SHA-256、包名、版本与签名校验完整保留。包名、签名和权限不变，可覆盖安装保留取件记录。\n\n旧版若无法从应用内更新，请在手机浏览器下载本测试版 APK 覆盖安装。"
 }

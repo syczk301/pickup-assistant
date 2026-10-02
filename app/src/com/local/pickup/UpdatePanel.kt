@@ -42,11 +42,15 @@ class UpdatePanel private constructor(private val activity: Activity) : DialogIn
         gravity = Gravity.END; setPadding(0, dp(20), 0, 0)
     }
     private var dismissed: DialogInterface.OnDismissListener? = null
+    private var shown: DialogInterface.OnShowListener? = null
+    private var showRequested = false
     private var shownAt = 0L
     private var backCallback: Any? = null
     private var previousAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_AUTO
+    private val buttons = mutableMapOf<Int, TextView>()
     var isShowing = false
         private set
+    val isOpen: Boolean get() = isShowing || showRequested
 
     init {
         card.addView(titleView)
@@ -65,36 +69,48 @@ class UpdatePanel private constructor(private val activity: Activity) : DialogIn
         }
     }
     fun setMessage(message: CharSequence?) { messageView.text = message }
+    fun setTitle(title: CharSequence) { titleView.text = title }
+    fun setButton(which: Int, label: String, listener: DialogInterface.OnClickListener?) {
+        button(which, label, listener)
+    }
     fun setOnDismissListener(listener: DialogInterface.OnDismissListener?) { dismissed = listener }
+    fun setOnShowListener(listener: DialogInterface.OnShowListener?) { shown = listener }
     fun show() {
         if (isShowing || activity.isFinishing || activity.isDestroyed) return
+        if (!showRequested) {
+            showRequested = true
+            active.getOrPut(activity) { mutableListOf() }.add(this)
+        }
         val decor = activity.window.decorView as ViewGroup
         if (!decor.isAttachedToWindow) {
-            decor.post { if (!activity.isFinishing && !activity.isDestroyed && decor.isAttachedToWindow) show() }
+            decor.post { if (showRequested && !activity.isFinishing && !activity.isDestroyed && decor.isAttachedToWindow) show() }
             return
         }
         previousAccessibility = activity.findViewById<View>(android.R.id.content).importantForAccessibility
         activity.findViewById<View>(android.R.id.content).importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
         decor.addView(host, ViewGroup.LayoutParams(-1, -1))
-        isShowing = true; shownAt = SystemClock.uptimeMillis()
-        active.getOrPut(activity) { mutableListOf() }.add(this)
+        isShowing = true; showRequested = false; shownAt = SystemClock.uptimeMillis()
         host.requestFocus()
         if (Build.VERSION.SDK_INT >= 33) backCallback = BackApi.register(activity) { dismiss() }
         android.util.Log.i("PickupUpdatePanel", "Update panel shown")
+        shown?.onShow(this)
     }
     override fun dismiss() {
-        if (!isShowing) return
+        if (!isOpen) return
+        val wasShowing = isShowing
+        showRequested = false
         (host.parent as? ViewGroup)?.removeView(host)
         isShowing = false; active[activity]?.remove(this)
         if (Build.VERSION.SDK_INT >= 33) backCallback?.let { BackApi.unregister(activity, it) }
         backCallback = null
-        if (active[activity].isNullOrEmpty()) activity.findViewById<View>(android.R.id.content)?.importantForAccessibility = previousAccessibility
+        if (wasShowing && active[activity].isNullOrEmpty()) activity.findViewById<View>(android.R.id.content)?.importantForAccessibility = previousAccessibility
         android.util.Log.i("PickupUpdatePanel", "Update panel dismissed")
         dismissed?.onDismiss(this)
     }
     override fun cancel() { dismiss() }
     private fun button(which: Int, label: String, listener: DialogInterface.OnClickListener?) {
-        val button = TextView(activity).apply {
+        val existing = buttons[which]
+        val button = (existing ?: TextView(activity)).apply {
             text = label; textSize = 14f; gravity = Gravity.CENTER; minHeight = dp(48); isFocusable = true
             setPadding(dp(18), dp(12), dp(18), dp(12))
             setTextColor(if (which == DialogInterface.BUTTON_POSITIVE) Color.WHITE else blue)
@@ -104,7 +120,10 @@ class UpdatePanel private constructor(private val activity: Activity) : DialogIn
                 if (SystemClock.uptimeMillis() - shownAt >= 450) { dismiss(); listener?.onClick(this@UpdatePanel, which) }
             }
         }
-        actions.addView(button, LinearLayout.LayoutParams(if (actions.orientation == LinearLayout.VERTICAL) -1 else -2, -2).apply { if (actions.childCount > 0) { if (actions.orientation == LinearLayout.VERTICAL) topMargin = dp(8) else leftMargin = dp(8) } })
+        if (existing == null) {
+            buttons[which] = button
+            actions.addView(button, LinearLayout.LayoutParams(if (actions.orientation == LinearLayout.VERTICAL) -1 else -2, -2).apply { if (actions.childCount > 0) { if (actions.orientation == LinearLayout.VERTICAL) topMargin = dp(8) else leftMargin = dp(8) } })
+        }
     }
     class Builder(private val activity: Activity) {
         private var title = ""
