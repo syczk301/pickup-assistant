@@ -8,5 +8,5 @@
   "apkUrl": "https://github.com/syczk301/pickup-assistant/releases/download/v0.5.5-beta.1/pickup-assistant-0.5.5.apk",
   "sizeBytes": 2549693,
   "sha256": "ddae98c12b517ab95438dbf65583a211fe9b973d2afbd0a8b3d50a0babee20d6",
-  "releaseNotes": "应用更名为“拾件簿”，图标改为深青底色、米白标签卡，包含打孔、条码与取件勾选。同步更新首页、设置、小组件说明、安装提示和通知名称。使用原包名和签名，覆盖安装保留取件记录。正式渠道仍为0.5.3，此版本先发布到测试渠道。"
+  "releaseNotes": "应用更名为“拾件簿”，图标改为深青底色、米白标签卡，包含打孔、条码与取件勾选。同步更新首页、设置、小组件说明、安装提示和通知名称。使用原包名和签名，覆盖安装保留取件记录。此版本先发布到测试渠道。"
 }
