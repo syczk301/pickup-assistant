@@ -1,11 +1,12 @@
 {
   "schemaVersion": 1,
   "packageName": "com.local.pickup",
-  "versionCode": 18,
-  "versionName": "0.5.3",
+  "channel": "stable",
+  "versionCode": 21,
+  "versionName": "0.5.4",
   "minSdk": 26,
-  "apkUrl": "https://github.com/syczk301/pickup-assistant/releases/download/v0.5.3/pickup-assistant-0.5.3.apk",
-  "sizeBytes": 2541161,
-  "sha256": "ebcc290639b5b98c6c45933cf0f2a39c50f8ccaef1ce866786f20b896574dfa1",
-  "releaseNotes": "更新提示、下载进度和更新结果改为页面内浮层，避免独立系统弹窗出现后消失的问题。仅通过按钮或返回键关闭，支持长说明滚动和大字体按钮竖排。保留后台下载与完整安装包校验，设置折叠保持不变。安卓环境已验证连续检查、前后台切换、外侧触摸、取消下载及完整下载校验。"
+  "apkUrl": "https://github.com/syczk301/pickup-assistant/releases/download/v0.5.4/pickup-assistant-0.5.4.apk",
+  "sizeBytes": 2545257,
+  "sha256": "3c0d9aa4d74a4b16cf405433faf8dc7f115e08902d802e2e7b3d4423447d87b5",
+  "releaseNotes": "新增正式版和测试版更新渠道，默认正式版。测试渠道提前体验，正式渠道仅接收评审通过的更新。切换渠道取消旧下载、提示和检查结果，不自动降级。基于0.5.3开发，未恢复流体云功能。此版本先用于测试，正式渠道仍为0.5.3。"
 }
