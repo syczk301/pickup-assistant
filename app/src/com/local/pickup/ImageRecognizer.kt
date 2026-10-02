@@ -94,10 +94,16 @@ class ImageRecognizer(context: Context) {
                     val raw = api!!.getUTF8Text().orEmpty().take(20000)
                     return refineCodes(api!!, bitmap!!, raw, data)
                 }
-                var text = pass(TessBaseAPI.PageSegMode.PSM_AUTO)
-                if (ImageParcelParser.parse(text).parcels.isEmpty() && !closed && token == generation.get()) {
-                    val sparse = pass(TessBaseAPI.PageSegMode.PSM_SPARSE_TEXT)
-                    if (ImageParcelParser.parse(sparse).parcels.isNotEmpty() || sparse.length > text.length) text = sparse
+                // Screenshots contain maps and separate cards; sparse segmentation keeps fields apart.
+                // Still compare page segmentation even when one pass already found a pickup code.
+                var text = pass(TessBaseAPI.PageSegMode.PSM_SPARSE_TEXT)
+                if (!closed && token == generation.get()) {
+                    val page = pass(TessBaseAPI.PageSegMode.PSM_AUTO)
+                    fun quality(raw: String): Int {
+                        val scan = ImageParcelParser.parse(raw)
+                        return scan.parcels.size.coerceAtMost(12) * 100 + scan.confidence
+                    }
+                    if (quality(page) > quality(text)) text = page
                 }
                 val recognized = text
                 main.post { if (!closed && token == generation.get()) done(recognized, null) }

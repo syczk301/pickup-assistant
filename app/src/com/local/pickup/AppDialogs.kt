@@ -3,8 +3,10 @@ package com.local.pickup
 import android.app.*
 import android.content.DialogInterface
 import android.graphics.Color
+import android.graphics.Rect
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
+import android.os.Build
 import android.view.*
 import android.widget.*
 import java.util.WeakHashMap
@@ -32,11 +34,45 @@ object AppDialogs {
             setPadding(dp(a, 20), dp(a, 8), dp(a, 20), dp(a, 8))
             setTextColor(if (which == -1) Color.WHITE else blue(a))
             background = shape(a, if (which == -1) 0xff1265d6.toInt() else if (dark(a)) 0xff253e55.toInt() else 0xffeaf3ff.toInt(), 12)
-            (layoutParams as? android.view.ViewGroup.MarginLayoutParams)?.let { it.leftMargin = dp(a, 6); it.bottomMargin = dp(a, 8); layoutParams = it }
+            // The framework button panel reserves its own padding. An extra bottom margin
+            // pushes taller styled buttons above that panel, clipping their top corners.
+            (layoutParams as? android.view.ViewGroup.MarginLayoutParams)?.let { it.leftMargin = dp(a, 6); it.bottomMargin = 0; layoutParams = it }
+            (parent as? ViewGroup)?.let { panel ->
+                panel.setPadding(panel.paddingLeft, panel.paddingTop, panel.paddingRight, maxOf(panel.paddingBottom, dp(a, 16)))
+            }
         }
     }
 
     private class Popup(private val a: Activity) : AlertDialog(a) {
+        private var naturalHeight = 0
+        private var keyboardSized = false
+        private val fitListener = ViewTreeObserver.OnGlobalLayoutListener { fitWindow() }
+        private fun fitWindow() {
+            if (!isShowing) return
+            val w = window ?: return
+            val decor = w.decorView
+            val frame = Rect().also { decor.getWindowVisibleDisplayFrame(it) }
+            val keyboard = if (Build.VERSION.SDK_INT >= 30) decor.rootWindowInsets?.isVisible(WindowInsets.Type.ime()) == true
+                else a.resources.displayMetrics.heightPixels - frame.bottom > dp(a, 160)
+            if (keyboard && frame.height() > 0) {
+                if (!keyboardSized && decor.height > 0) naturalHeight = decor.height
+                val height = minOf(naturalHeight.takeIf { it > 0 } ?: frame.height(), (frame.height() - dp(a, 32)).coerceAtLeast(dp(a, 120)))
+                val y = ((frame.height() - height) / 2).coerceAtLeast(0)
+                val attrs = w.attributes
+                if (attrs.height != height || attrs.y != y || attrs.gravity != (Gravity.TOP or Gravity.CENTER_HORIZONTAL)) {
+                    // Floating dialog windows can ignore ADJUST_RESIZE. Explicitly reserve
+                    // the visible viewport; the framework then gives the form a scrollable body.
+                    attrs.height = height; attrs.y = y; attrs.gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
+                    w.attributes = attrs
+                }
+                keyboardSized = true
+            } else if (keyboardSized) {
+                keyboardSized = false
+                val attrs = w.attributes
+                attrs.height = ViewGroup.LayoutParams.WRAP_CONTENT; attrs.y = 0; attrs.gravity = Gravity.CENTER
+                w.attributes = attrs
+            } else if (decor.height > 0) naturalHeight = decor.height
+        }
         override fun show() {
             if (a.isFinishing || a.isDestroyed) return
             if (!a.window.decorView.isAttachedToWindow) {
@@ -45,8 +81,19 @@ object AppDialogs {
             }
             try { super.show() } catch (e: WindowManager.BadTokenException) { android.util.Log.w("PickupDialog", "Window not ready", e) }
         }
-        override fun onStart() { super.onStart(); style(a, this); active.getOrPut(a) { mutableSetOf() }.add(this) }
-        override fun onStop() { active[a]?.remove(this); super.onStop() }
+        override fun onStart() {
+            super.onStart(); style(a, this); active.getOrPut(a) { mutableSetOf() }.add(this)
+            window?.decorView?.apply {
+                viewTreeObserver.addOnGlobalLayoutListener(fitListener)
+                setOnApplyWindowInsetsListener { v, insets -> v.post { fitWindow() }; v.onApplyWindowInsets(insets) }
+            }
+            a.window.decorView.viewTreeObserver.addOnGlobalLayoutListener(fitListener)
+        }
+        override fun onStop() {
+            window?.decorView?.let { if (it.viewTreeObserver.isAlive) it.viewTreeObserver.removeOnGlobalLayoutListener(fitListener); it.setOnApplyWindowInsetsListener(null) }
+            a.window.decorView.viewTreeObserver.let { if (it.isAlive) it.removeOnGlobalLayoutListener(fitListener) }
+            active[a]?.remove(this); super.onStop()
+        }
     }
 
     class Builder(private val a: Activity) {

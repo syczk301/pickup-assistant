@@ -2,11 +2,11 @@
   "schemaVersion": 1,
   "packageName": "com.local.pickup",
   "channel": "beta",
-  "versionCode": 26,
-  "versionName": "0.5.9",
+  "versionCode": 27,
+  "versionName": "0.5.10",
   "minSdk": 26,
-  "apkUrl": "https://github.com/syczk301/pickup-assistant/releases/download/v0.5.9-beta.1/pickup-assistant-0.5.9.apk",
-  "sizeBytes": 19194069,
-  "sha256": "35302a80d2a7655e460e1c5c9006fd5ac71feded9e27d85e396090fa54d36665",
-  "releaseNotes": "修复下载几秒后进度窗口消失：页面短暂暂停时保留进度，页面重建后恢复同一下载；主动选择后台下载或返回关闭后不会自动重开。\n\n进度轮询在窗口实际显示后启动，安装包校验完成后正常出现安装提示。下载失败持续显示具体原因并提供重试，系统下载记录暂时不可用时保留任务并重新读取。\n\n下载使用 GitHub 或官方资产 API 地址，由系统下载器获取新的重定向，避免复用探测时的临时地址。大小、SHA-256、包名、版本与签名校验完整保留。包名、签名和权限不变，可覆盖安装保留取件记录。\n\n旧版若无法从应用内更新，请在手机浏览器下载本测试版 APK 覆盖安装。"
+  "apkUrl": "https://github.com/syczk301/pickup-assistant/releases/download/v0.5.10-beta.1/pickup-assistant-0.5.10.apk",
+  "sizeBytes": 19206357,
+  "sha256": "433a219f5c23219be654b9dce0aa5c8c33749c9c0d734ec2b444f1b2006356cd",
+  "releaseNotes": "修复物流截图的快递公司和取件地点提取：优先使用明确的快递公司字段、物流单号所在行和驿站卡片，排除收货／寄件地址、号码保护及页面操作按钮。同一截图的取件码、快递公司和驿站可跨识别分块匹配；多个包裹仍分别核对，信息冲突时保留“其他”供手动选择。\n\n图片识别比较两种页面布局的结果，即使已经读到取件码，也会检查快递公司和驿站信息的可靠性。识别仍完全在本机执行，请核对后保存。\n\n修复“取消／保存”等弹窗按钮顶部圆角被裁切，保留完整点击区域和底部留白。输入时按键盘上方的可用高度调整弹窗，长表单可滚动，底部按钮保持可见。\n\n沿用 0.5.9 的下载进度、后台任务恢复和安装包完整校验。包名、签名和权限不变，可覆盖安装保留取件记录。"
 }
