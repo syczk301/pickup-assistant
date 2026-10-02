@@ -21,6 +21,8 @@ jobs:
           distribution: temurin
           java-version: '17'
       - uses: android-actions/setup-android@v3
+        with:
+          packages: 'build-tools;35.0.0'
       - run: sdkmanager 'build-tools;35.0.0'
       - name: Verify candidate package, signature, SHA-256 and source
         env:
@@ -48,6 +50,8 @@ jobs:
           distribution: temurin
           java-version: '17'
       - uses: android-actions/setup-android@v3
+        with:
+          packages: 'build-tools;35.0.0'
       - run: sdkmanager 'build-tools;35.0.0'
       - uses: actions/download-artifact@v4
         with:
