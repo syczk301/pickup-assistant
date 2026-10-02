@@ -1,0 +1,11 @@
+Offline OCR dependencies
+Tesseract4Android 4.9.0, Copyright 2019 Adaptech s.r.o., Robert Posel (Apache 2.0).
+https://github.com/adaptech-cz/Tesseract4Android/tree/4.9.0
+Tesseract OCR 5.5.1 (Apache 2.0). https://github.com/tesseract-ocr/tesseract
+Leptonica 1.85.0 (BSD-style). https://github.com/DanBloomberg/leptonica
+libpng 1.6.48 (libpng license). https://github.com/pnggroup/libpng
+libjpeg v9f (IJG license). https://www.ijg.org/
+This software is based in part on the work of the Independent JPEG Group.
+Chinese and English LSTM models: tessdata_fast 4.1.0 (Apache 2.0).
+https://github.com/tesseract-ocr/tessdata_fast/tree/4.1.0
+Full license notices are included alongside this file and in APK assets/licenses.

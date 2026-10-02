@@ -1,8 +1,8 @@
 # 拾件簿
 
-原生 Kotlin Android 应用，包名 `com.local.pickup`，最低 Android 8.0。当前测试版本 0.5.6，版本号 23；正式渠道为 0.5.5，MIT 许可证。
+原生 Kotlin Android 应用，包名 `com.local.pickup`，最低 Android 8.0。当前测试版本 0.5.7，版本号 24；正式渠道为 0.5.5，MIT 许可证。
 
-应用的 14 个模块均使用 Kotlin；短信和取件记录在本机处理。支持短信提取、粘贴识别、记录管理、统计、提醒、小组件、JSON 备份和 GitHub 在线更新。
+应用模块均使用 Kotlin；短信、图片识别和取件记录在本机处理。支持短信提取、粘贴识别、记录管理、统计、提醒、小组件、JSON 备份和 GitHub 在线更新。
 
 ## 构建
 
@@ -79,7 +79,7 @@
 
 新功能只发布 GitHub Pre-release，命名 vX.Y.Z-beta.N。应用内部 versionName 使用 X.Y.Z，测试阶段由发布标签和更新渠道标识；正式审核后复用同一个 APK，保持 SHA-256、签名及内部版本号不变。内部 versionCode 跨渠道递增，已用过的 19、20 不再使用。
 
-发布测试版：修改清单和 Gradle 中的版本；运行 build.py、test.py；写入上一级 deliverables/beta-release-notes.txt。设置具有 contents/workflows 写权限的 GITHUB_TOKEN，然后运行 python app\release.py beta v0.5.6-beta.1。脚本验证签名和 APK 版本，上传测试 APK、源码及测试版本文件，保留正式版本文件不变。失败或结果未知时先检查远端发布状态，不直接重复执行。
+发布测试版：修改清单和 Gradle 中的版本；运行 build.py、test.py；写入上一级 deliverables/beta-release-notes.txt。设置具有 contents/workflows 写权限的 GITHUB_TOKEN，然后运行 python app\release.py beta v0.5.7-beta.1。脚本验证签名和 APK 版本，上传测试 APK、源码及测试版本文件，保留正式版本文件不变。失败或结果未知时先检查远端发布状态，不直接重复执行。
 
 正式评审：打开 GitHub Actions 的 Review and promote Beta to stable，Run workflow，填写测试标签。inspect 任务验证包名、版本、签名、SHA-256 和源码包，生成评审候选。production 任务必须经过仓库负责人 syczk301 在 GitHub 上批准；只有 main 分支允许执行。未经批准不会更新正式入口。流程重新检查候选没有变化，再将同一 APK 发布为正式 Release 并更新 update.json。评审前可查看候选记录、测试结果及手机效果；有修改应发布新 Beta 后重新评审。
 
@@ -88,3 +88,8 @@
 0.5.5 Beta 1 应用更名为拾件簿，启动图标改为深青底色的标签卡，包含打孔、条码和取件勾选。包名和签名保持兼容，覆盖安装保留本地数据。
 
 0.5.6 Beta 1 应用内的包裹导航和空列表图标统一为标签卡样式，包含打孔、条码和勾选，保留选中态、深色模式与功能图标的可读性。
+
+
+0.5.7 Beta 1 添加包裹窗口增加“图片识别”：通过系统文件选择器选取截图或照片，在本机识别取件码、快递公司、驿站名称及地址，填入可编辑表单，核对后保存。无需相册、存储或相机权限；图片临时副本识别完成即删除，不上传。支持 EXIF 方向、多码选择与去重；识别文字会保存到记录备注。空白、损坏、超过20 MB的图片会提示重新选择，表单已有内容保留。OCR 可能误认字符，尤其是复杂背景、模糊照片和地址生僻字，保存前需核对。
+
+离线引擎为 [Tesseract4Android 4.9.0](https://github.com/adaptech-cz/Tesseract4Android)，中文和英文模型来自 [tessdata_fast 4.1.0](https://github.com/tesseract-ocr/tessdata_fast)。首次构建自动下载锁定依赖并校验 SHA-256，清单在 `ocr-dependencies.json`；再次构建复用校验后的缓存。SDK 脚本和 Gradle 均调用 `ocr_dependencies.py` 准备模型、JAR及四个 ABI 的原生库。相关 Apache/BSD/IJG 授权说明见 `third_party/ocr-*.txt`，并随 APK 打包。`tests/ImageParcelParserTest.kt` 覆盖 26 项图片文字提取检查。

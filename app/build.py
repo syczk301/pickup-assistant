@@ -5,6 +5,7 @@ import shutil
 import subprocess
 import zipfile
 import xml.etree.ElementTree as ET
+from ocr_dependencies import prepare
 
 ROOT = pathlib.Path(__file__).resolve().parent
 SDK = pathlib.Path(os.environ.get('ANDROID_SDK_ROOT', str(ROOT.parent / '.tools' / 'sdk')))
@@ -29,6 +30,7 @@ BUILD = ROOT / 'build'
 OUT = ROOT.parent / 'deliverables'
 BUILD.mkdir(exist_ok=True)
 OUT.mkdir(exist_ok=True)
+OCR_JAR, OCR_JNI, OCR_ASSETS = prepare()
 
 def run(*args):
     # aapt2 on Windows uses narrow path arguments; relative paths work in Chinese directories.
@@ -48,7 +50,7 @@ sources = list((BUILD/'generated').rglob('*.java'))
 boot = os.pathsep.join(os.path.relpath(p, ROOT) for p in [ANDROID, TOOLS/'core-lambda-stubs.jar'])
 run(JAVAC, '-encoding', 'UTF-8', '-source', '8', '-target', '8', '-bootclasspath', boot,
     '-d', classes, *sources)
-classpath = os.pathsep.join(os.path.relpath(p, ROOT) for p in [ANDROID, classes, STDLIB])
+classpath = os.pathsep.join(os.path.relpath(p, ROOT) for p in [ANDROID, classes, STDLIB, OCR_JAR])
 run(JAVA, '-cp', os.path.relpath(KOTLIN/'lib'/'*', ROOT),
     'org.jetbrains.kotlin.cli.jvm.K2JVMCompiler', '-kotlin-home', KOTLIN,
     '-no-reflect', '-jvm-target', '1.8', '-classpath', classpath,
@@ -59,10 +61,15 @@ with zipfile.ZipFile(BUILD/'classes.jar', 'w') as z:
 dex = BUILD/'dex'
 dex.mkdir(exist_ok=True)
 run(JAVA, '-cp', D8, 'com.android.tools.r8.D8', '--min-api', '26',
-    '--lib', ANDROID, '--output', dex, BUILD/'classes.jar', STDLIB)
+    '--lib', ANDROID, '--output', dex, BUILD/'classes.jar', STDLIB, OCR_JAR)
 shutil.copy2(BUILD/'base.apk', BUILD/'unsigned.apk')
 with zipfile.ZipFile(BUILD/'unsigned.apk', 'a') as z:
     z.write(dex/'classes.dex', 'classes.dex')
+    for path in OCR_JNI.rglob('*.so'):
+        z.write(path, 'lib/' + path.relative_to(OCR_JNI).as_posix(), compress_type=zipfile.ZIP_DEFLATED)
+    for path in OCR_ASSETS.rglob('*'):
+        if path.is_file():
+            z.write(path, 'assets/' + path.relative_to(OCR_ASSETS).as_posix(), compress_type=zipfile.ZIP_DEFLATED)
 run(TOOLS/'zipalign.exe', '-f', '4', BUILD/'unsigned.apk', BUILD/'aligned.apk')
 key = ROOT/'local-debug.jks'
 if not key.exists():

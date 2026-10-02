@@ -2,11 +2,11 @@
   "schemaVersion": 1,
   "packageName": "com.local.pickup",
   "channel": "beta",
-  "versionCode": 23,
-  "versionName": "0.5.6",
+  "versionCode": 24,
+  "versionName": "0.5.7",
   "minSdk": 26,
-  "apkUrl": "https://github.com/syczk301/pickup-assistant/releases/download/v0.5.6-beta.1/pickup-assistant-0.5.6.apk",
-  "sizeBytes": 2549690,
-  "sha256": "a393474830aabd57c70acfb794168d8f610362a55aea38140816f2c4a3ea46ff",
-  "releaseNotes": "应用内图标与“拾件簿”新品牌统一：底部包裹导航、待取和已取空列表中的立方体图标替换为标签卡，包含打孔、条码和取件勾选。保留图标的选中状态和深色模式着色。包名和签名不变，覆盖安装保留取件记录。先发布到测试渠道，正式发布需评审通过。"
+  "apkUrl": "https://github.com/syczk301/pickup-assistant/releases/download/v0.5.7-beta.1/pickup-assistant-0.5.7.apk",
+  "sizeBytes": 19169049,
+  "sha256": "5cac23523c7e7ef8e9c2fb2e5b52eda78b667b619a1aaf96bd94387a82c55908",
+  "releaseNotes": "添加包裹新增图片识别：选择截图或照片，在本机提取取件码、快递公司、驿站名称和地址，核对后保存。支持多码切换、批量添加、全角字符和重复检查；无需新增相册、存储或相机权限。空白、损坏及过大的图片会提示，保留表单草稿。OCR可能识别错字，请核对取件码与地址。包名和签名不变，可覆盖安装保留记录。"
 }

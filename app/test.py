@@ -21,5 +21,5 @@ if not JSON.exists():
 cp = os.pathsep.join(str(p) for p in [CLASSES, JSON, ANDROID, KOTLIN/'lib/kotlin-stdlib.jar'])
 java = str(JAVA_HOME/'bin/java.exe')
 subprocess.run([java, '-cp', str(KOTLIN/'lib/*'), 'org.jetbrains.kotlin.cli.jvm.K2JVMCompiler', '-kotlin-home', str(KOTLIN), '-no-reflect', '-jvm-target', '1.8', '-classpath', cp, '-d', str(OUT), *map(str, sorted((ROOT/'tests').glob('*.kt')))], check=True)
-for test in ['ParserTestKt', 'UpdateProtocolTestKt', 'MigrationTestKt']:
+for test in ['ParserTestKt', 'UpdateProtocolTestKt', 'MigrationTestKt', 'ImageParcelParserTestKt']:
     subprocess.run([java, '-cp', str(OUT)+os.pathsep+cp, test], check=True)

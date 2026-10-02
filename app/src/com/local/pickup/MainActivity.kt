@@ -40,6 +40,11 @@ class MainActivity : Activity() {
     private val expandedSettings = mutableSetOf<String>()
     private val settingsSummaries = mutableListOf<() -> Unit>()
     private val handler = Handler(Looper.getMainLooper())
+    private var imageRecognizer: ImageRecognizer? = null
+    private var imageResult: ((Uri) -> Unit)? = null
+    private var addSnapshot: (() -> Bundle)? = null
+    private var addDraft: Bundle? = null
+    private var pendingImage: Uri? = null
     @Volatile private var scanning = false
     private val listener =
         SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
@@ -58,10 +63,13 @@ class MainActivity : Activity() {
             query = saved.getString("query", "")
             carrierFilter = saved.getString("carrierFilter", "全部")
             expandedSettings.addAll(saved.getStringArrayList("expandedSettings") ?: emptyList())
+            addDraft = saved.getBundle("addDraft")
+            pendingImage = saved.getString("pendingImage")?.let(Uri::parse)
         } else sort = Store.prefs(this).getInt("sort", 0)
         Store.prefs(this).registerOnSharedPreferenceChangeListener(listener)
         ReminderReceiver.schedule(this)
         render()
+        if (addDraft != null) handler.post { if (!isDestroyed) addParcel() }
     }
 
     override fun onSaveInstanceState(state: Bundle) {
@@ -72,9 +80,12 @@ class MainActivity : Activity() {
         state.putString("query", query)
         state.putString("carrierFilter", carrierFilter)
         state.putStringArrayList("expandedSettings", ArrayList(expandedSettings))
+        state.putBundle("addDraft", addSnapshot?.invoke() ?: addDraft)
+        state.putString("pendingImage", pendingImage?.toString())
     }
 
     override fun onDestroy() {
+        imageRecognizer?.close()
         AppDialogs.close(this)
         if (::updates.isInitialized) updates.close()
         handler.removeCallbacksAndMessages(null)
@@ -210,7 +221,7 @@ class MainActivity : Activity() {
             title.addView(text("拾件簿", 11, muted))
             header.addView(title)
             space(header, 8)
-            header.addView(text(if (page == 1) "你的包裹记录，一目了然。" else "短信在本机识别，取件记录保存在本机。", 13, muted))
+            header.addView(text(if (page == 1) "你的包裹记录，一目了然。" else "短信和图片在本机识别，取件记录保存在本机。", 13, muted))
         }
         val scroll = ScrollView(this).apply { isFillViewport = true }
         root.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
@@ -609,6 +620,9 @@ class MainActivity : Activity() {
     }
 
     private fun addParcel() {
+        val restored = addDraft
+        addDraft = null
+        var fromImage = restored?.getBoolean("fromImage", false) ?: false
         val layout = col().apply { setPadding(dp(20), dp(8), dp(20), dp(16)) }
         fun section(label: String) {
             layout.addView(text(label, 17, ink, true).apply { setPadding(0, dp(8), 0, dp(6)); includeFontPadding = false })
@@ -621,14 +635,26 @@ class MainActivity : Activity() {
             if (multiline) { minLines = 3; maxLines = 5; gravity = Gravity.TOP }
             layout.addView(this, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(8) })
         }
-        section("短信内容")
-        val sms = entry("粘贴完整快递短信，自动填入取件信息", true)
-        val pasteButton = action("粘贴短信内容") {
+        section("短信 / 图片内容")
+        val sms = entry("粘贴短信，或选择图片识别后查看原文", true)
+        val pasteButton = action("粘贴短信") {
             val clip = (getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager).primaryClip
             val value = if (clip != null && clip.itemCount > 0) clip.getItemAt(0).coerceToText(this).toString() else ""
-            if (value.isBlank()) toast("剪贴板没有文字") else { sms.setText(value); sms.clearFocus() }
+            if (value.isBlank()) toast("剪贴板没有文字") else { fromImage = false; sms.setText(value); sms.clearFocus() }
         }
-        layout.addView(pasteButton, LinearLayout.LayoutParams(-1, -2))
+        val imageButton = action("图片识别") {
+            try {
+                startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+                    type = "image/*"; addCategory(Intent.CATEGORY_OPENABLE)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
+                }, 23)
+            } catch (_: ActivityNotFoundException) { toast("当前系统没有图片选择器，请使用粘贴或手动添加") }
+        }
+        val inputs = row()
+        inputs.addView(pasteButton, LinearLayout.LayoutParams(0, -2, 1f).apply { rightMargin = dp(4) })
+        inputs.addView(imageButton, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = dp(4) })
+        layout.addView(inputs, LinearLayout.LayoutParams(-1, -2))
+        layout.addView(text("图片在本机识别，不上传；请核对后保存", 11, muted).apply { setPadding(0, dp(6), 0, 0) })
         val result = text("也可以直接填写下方取件信息", 12, muted).apply { setPadding(0, dp(8), 0, dp(8)) }
         layout.addView(result)
         section("取件信息")
@@ -654,14 +680,29 @@ class MainActivity : Activity() {
         lateinit var dialog: AlertDialog
         val allButton = action("按短信原文添加全部") {
             if (parsed.size < 2) return@action
-            val count = Store.ingest(this, sms.text.toString(), System.currentTimeMillis())
+            val count = if (!fromImage) Store.ingest(this, sms.text.toString(), System.currentTimeMillis()) else synchronized(Store) {
+                val records = Store.load(this)
+                var added = 0
+                for (candidate in parsed) {
+                    if (records.none { it.completed == 0L && it.code.equals(candidate.code, true) && it.carrier == candidate.carrier }) {
+                        records.add(Store.make(candidate.code, candidate.carrier, candidate.station, sms.text.toString(), "图片识别")); added++
+                    }
+                }
+                if (added > 0) Store.save(this, records)
+                added
+            }
             dialog.dismiss(); render()
             toast(if (count > 0) "已添加 $count 个取件码" else "记录已存在，无需重复添加")
         }.apply { visibility = View.GONE }
         layout.addView(allButton, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })
         watch(sms) { value ->
-            parsed = SmsParser.parse(value)
+            val image = if (fromImage) ImageParcelParser.parse(value) else null
+            parsed = image?.parcels ?: SmsParser.parse(value)
             if (parsed.isNotEmpty()) fill(parsed.first())
+            else if (image != null) {
+                if (image.station.isNotBlank()) station.setText(image.station)
+                if (image.carrier != "其他") carrier.setSelection(SmsParser.CARRIERS.indexOf(image.carrier))
+            }
             result.text = when {
                 value.isBlank() -> "也可以直接填写下方取件信息"
                 parsed.isEmpty() -> "未识别到取件码，可在下方手动填写"
@@ -670,7 +711,7 @@ class MainActivity : Activity() {
             }
             result.setTextColor(if (parsed.isEmpty()) muted else accent)
             allButton.visibility = if (parsed.size > 1) View.VISIBLE else View.GONE
-            allButton.text = "按短信原文添加全部 ${parsed.size} 个"
+            allButton.text = "按${if (fromImage) "图片识别结果" else "短信原文"}添加全部 ${parsed.size} 个"
         }
         result.setOnClickListener {
             if (parsed.size > 1) AppDialogs.Builder(this).setTitle("选择要填写的取件码")
@@ -690,14 +731,57 @@ class MainActivity : Activity() {
                     if (records.any { it.completed == 0L && it.code.equals(value, true) && it.carrier == company }) {
                         code.error = "已有相同的待取记录"; return@save
                     }
-                    val parcel = Store.make(value, company, station.text.toString().trim(), note.text.toString().trim(), if (sms.text.isBlank()) "手动添加" else "短信识别")
-                    if (sms.text.isNotBlank()) parcel.source = sms.text.toString()
+                    val parcel = Store.make(value, company, station.text.toString().trim(), note.text.toString().trim(), if (fromImage) "图片识别" else if (sms.text.isBlank()) "手动添加" else "短信识别")
+                    if (sms.text.isNotBlank()) {
+                        if (fromImage) parcel.note = listOf(note.text.toString().trim(), "图片识别原文：\n${sms.text}").filter { it.isNotBlank() }.joinToString("\n\n")
+                        else parcel.source = sms.text.toString()
+                    }
                     records.add(parcel); Store.save(this, records)
                 }
                 dialog.dismiss(); render(); toast("已保存")
             }
         }
+        addSnapshot = {
+            Bundle().apply {
+                putString("sms", sms.text.toString()); putString("code", code.text.toString())
+                putString("station", station.text.toString()); putString("note", note.text.toString())
+                putInt("carrier", carrier.selectedItemPosition); putBoolean("fromImage", fromImage)
+            }
+        }
+        fun releaseImage(uri: Uri?) {
+            if (uri != null) try { contentResolver.releasePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION) } catch (_: SecurityException) { }
+        }
+        imageResult = { uri ->
+            pendingImage = uri
+            result.text = "正在本机识别图片…"
+            val editable = listOf<View>(sms, code, carrier, station, note, pasteButton, imageButton, allButton)
+            editable.forEach { it.isEnabled = false }
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = false
+            val recognizer = imageRecognizer ?: ImageRecognizer(this).also { imageRecognizer = it }
+            recognizer.recognize(uri) { recognized, error ->
+                releaseImage(uri)
+                pendingImage = null
+                if (!isDestroyed && !isFinishing && dialog.isShowing) {
+                    editable.forEach { it.isEnabled = true }
+                    dialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = true
+                    if (error != null) { result.text = error; result.setTextColor(muted) }
+                    else if (recognized.isNullOrBlank()) { result.text = "图片中没有识别到文字，请换一张清晰截图或手动填写"; result.setTextColor(muted) }
+                    else { fromImage = true; sms.setText(recognized); sms.clearFocus() }
+                }
+            }
+        }
+        dialog.setOnDismissListener {
+            imageRecognizer?.cancel(); imageResult = null; addSnapshot = null
+            if (!isChangingConfigurations) releaseImage(pendingImage)
+            pendingImage = null
+        }
         dialog.show()
+        restored?.let {
+            sms.setText(it.getString("sms", "")); code.setText(it.getString("code", ""))
+            station.setText(it.getString("station", "")); note.setText(it.getString("note", ""))
+            carrier.setSelection(it.getInt("carrier", SmsParser.CARRIERS.lastIndex).coerceIn(0, SmsParser.CARRIERS.lastIndex))
+        }
+        pendingImage?.let { uri -> handler.post { if (dialog.isShowing) imageResult?.invoke(uri) } }
     }
 
     private fun identityCode() {
@@ -1060,6 +1144,15 @@ class MainActivity : Activity() {
 
     override fun onActivityResult(request: Int, result: Int, data: Intent?) {
         super.onActivityResult(request, result, data)
+        if (request == 23) {
+            if (result == RESULT_OK) data?.data?.let { uri ->
+                try { contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION) } catch (_: SecurityException) { }
+                pendingImage = uri
+                if (imageResult != null) imageResult?.invoke(uri)
+                else if (addDraft == null) addParcel()
+            }
+            return
+        }
         val uri = data?.data ?: return
         if (result != RESULT_OK) return
         try {
