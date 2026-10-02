@@ -207,7 +207,7 @@ class MainActivity : Activity() {
                 text(if (page == 1) "取件统计" else "设置", 28, ink, true),
                 LinearLayout.LayoutParams(0, -2, 1f),
             )
-            title.addView(text("取件助手", 11, muted))
+            title.addView(text("拾件簿", 11, muted))
             header.addView(title)
             space(header, 8)
             header.addView(text(if (page == 1) "你的包裹记录，一目了然。" else "短信在本机识别，取件记录保存在本机。", 13, muted))
@@ -242,7 +242,7 @@ class MainActivity : Activity() {
         val all = Store.load(this)
         val pending = all.count { it.completed == 0L }
         val title = row()
-        title.addView(text("取件助手", 26, ink, true).apply { includeFontPadding = false }, LinearLayout.LayoutParams(0, -2, 1f))
+        title.addView(text("拾件簿", 26, ink, true).apply { includeFontPadding = false }, LinearLayout.LayoutParams(0, -2, 1f))
         title.addView(icon(R.drawable.ic_identity, accent, "身份码") { identityCode() }, LinearLayout.LayoutParams(dp(48), dp(48)))
         title.addView(icon(R.drawable.ic_add, accent, "添加包裹") { addParcel() }, LinearLayout.LayoutParams(dp(48), dp(48)))
         header.addView(title)
@@ -946,10 +946,10 @@ class MainActivity : Activity() {
                 22,
             )
         }
-        settingRow(data, "桌面小组件", "长按桌面 → 小组件 → 取件助手") {
+        settingRow(data, "桌面小组件", "长按桌面 → 小组件 → 拾件簿") {
             AppDialogs.Builder(this)
                 .setTitle("桌面小组件")
-                .setMessage("在桌面长按空白处，找到取件助手小组件。小组件显示待取数量，常规双栏尺寸展示 6 个取件码；显示数量随高度和字体大小调整，点击打开应用。")
+                .setMessage("在桌面长按空白处，找到拾件簿小组件。小组件显示待取数量，常规双栏尺寸展示 6 个取件码；显示数量随高度和字体大小调整，点击打开应用。")
                 .setPositiveButton("知道了", null)
                 .show()
         }
@@ -966,8 +966,8 @@ class MainActivity : Activity() {
             updates.check(true)
         }
         toggle(update, "自动检查更新", "每天首次打开时检查新版本", "auto_update", true)
-        val about = settingsGroup("about", "关于取件助手") { "短信与取件记录仅保存在本机" }
-        about.addView(text("取件助手 ${updates.version()}", 18, ink, true))
+        val about = settingsGroup("about", "关于拾件簿") { "短信与取件记录仅保存在本机" }
+        about.addView(text("拾件簿 ${updates.version()}", 18, ink, true))
         space(about, 8)
         about.addView(text("短信识别、取件管理与本地备份。短信和取件记录在本机处理，不上传。", 13, muted))
     }

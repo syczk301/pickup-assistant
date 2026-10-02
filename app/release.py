@@ -83,7 +83,7 @@ def promote(candidate):
     release = next((r for r in releases if r["tag_name"] == tag), None)
     if release and (release["prerelease"] or release["target_commitish"] != current["sourceCommit"]): raise ValueError("Existing stable release differs from reviewed candidate")
     if release is None:
-        release = api("releases", "POST", dict(tag_name=tag, target_commitish=current["sourceCommit"], name="取件助手 " + meta["versionName"], body=meta["releaseNotes"], draft=True, prerelease=False))
+        release = api("releases", "POST", dict(tag_name=tag, target_commitish=current["sourceCommit"], name="拾件簿 " + meta["versionName"], body=meta["releaseNotes"], draft=True, prerelease=False))
     beta = api("releases/tags/" + current["tag"]); assets = {a["name"]: a for a in beta["assets"]}
     source = download(assets[current["sourceName"]], current["tag"])
     archive = io.BytesIO()
@@ -159,7 +159,7 @@ def publish_beta(tag):
         if x["type"] == "blob" and x["path"].startswith("app/") and x["path"] not in files: entries.append(dict(path=x["path"], mode="100644", type="blob", sha=None))
     tree = api("git/trees", "POST", dict(base_tree=base_tree, tree=entries))
     commit = api("git/commits", "POST", dict(message="Publish test channel " + tag, tree=tree["sha"], parents=[head]))["sha"]
-    release = api("releases", "POST", dict(tag_name=tag, target_commitish=commit, name="取件助手 " + version + " Beta " + match[2], body=notes, draft=True, prerelease=True, make_latest="false"))
+    release = api("releases", "POST", dict(tag_name=tag, target_commitish=commit, name="拾件簿 " + version + " Beta " + match[2], body=notes, draft=True, prerelease=True, make_latest="false"))
     upload = release["upload_url"].split("{")[0]
     if urllib.parse.urlparse(upload).hostname != "uploads.github.com": raise ValueError("Invalid upload host")
     source_name = "pickup-assistant-source-" + version + ".zip"

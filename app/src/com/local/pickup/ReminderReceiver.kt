@@ -41,7 +41,7 @@ class ReminderReceiver : BroadcastReceiver() {
             manager.notify(
                 1,
                 Notification.Builder(c, "pickup")
-                    .setSmallIcon(R.drawable.ic_launcher)
+                    .setSmallIcon(R.drawable.ic_notification)
                     .setContentTitle(title)
                     .setContentText(message)
                     .setContentIntent(open(c))

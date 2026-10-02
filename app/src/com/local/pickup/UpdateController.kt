@@ -235,7 +235,7 @@ class UpdateController(private val activity: Activity) {
                 if (file.exists() && !file.delete()) throw IOException("无法清理旧安装包")
                 val request =
                     DownloadManager.Request(Uri.parse(downloadUrl))
-                        .setTitle("取件助手 ${release.name}")
+                        .setTitle("拾件簿 ${release.name}")
                         .setDescription("正在下载更新")
                         .setMimeType("application/vnd.android.package-archive")
                         .setNotificationVisibility(
@@ -370,7 +370,7 @@ class UpdateController(private val activity: Activity) {
             Store.prefs(context).edit().putInt("update_ready_prompted", release.code).apply()
             UpdatePanel.Builder(activity)
                 .setTitle("更新已准备好")
-                .setMessage("取件助手 ${release.name} 已完成校验。安装将保留已有取件记录。")
+                .setMessage("拾件簿 ${release.name} 已完成校验。安装将保留已有取件记录。")
                 .setNegativeButton("稍后", null)
                 .setPositiveButton("安装") { _, _ -> install() }
                 .show()
@@ -383,7 +383,7 @@ class UpdateController(private val activity: Activity) {
         if (!activity.packageManager.canRequestPackageInstalls()) {
             UpdatePanel.Builder(activity)
                 .setTitle("允许安装更新")
-                .setMessage("请在接下来的系统设置中允许取件助手安装应用，返回后继续安装。")
+                .setMessage("请在接下来的系统设置中允许拾件簿安装应用，返回后继续安装。")
                 .setNegativeButton("取消", null)
                 .setPositiveButton("前往设置") { _, _ ->
                     try {

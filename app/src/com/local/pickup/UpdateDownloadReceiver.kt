@@ -66,8 +66,8 @@ class UpdateDownloadReceiver : BroadcastReceiver() {
                         manager.notify(
                             2,
                             Notification.Builder(c, "updates")
-                                .setSmallIcon(R.drawable.ic_launcher)
-                                .setContentTitle("取件助手 ${release.name} 已下载")
+                                .setSmallIcon(R.drawable.ic_notification)
+                                .setContentTitle("拾件簿 ${release.name} 已下载")
                                 .setContentText("打开应用，确认安装新版本")
                                 .setContentIntent(ReminderReceiver.open(c))
                                 .setAutoCancel(true)
