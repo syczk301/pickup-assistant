@@ -2,11 +2,11 @@
   "schemaVersion": 1,
   "packageName": "com.local.pickup",
   "channel": "beta",
-  "versionCode": 24,
-  "versionName": "0.5.7",
+  "versionCode": 25,
+  "versionName": "0.5.8",
   "minSdk": 26,
-  "apkUrl": "https://github.com/syczk301/pickup-assistant/releases/download/v0.5.7-beta.1/pickup-assistant-0.5.7.apk",
-  "sizeBytes": 19169049,
-  "sha256": "5cac23523c7e7ef8e9c2fb2e5b52eda78b667b619a1aaf96bd94387a82c55908",
-  "releaseNotes": "添加包裹新增图片识别：选择截图或照片，在本机提取取件码、快递公司、驿站名称和地址，核对后保存。支持多码切换、批量添加、全角字符和重复检查；无需新增相册、存储或相机权限。空白、损坏及过大的图片会提示，保留表单草稿。OCR可能识别错字，请核对取件码与地址。包名和签名不变，可覆盖安装保留记录。"
+  "apkUrl": "https://github.com/syczk301/pickup-assistant/releases/download/v0.5.8-beta.1/pickup-assistant-0.5.8.apk",
+  "sizeBytes": 19185877,
+  "sha256": "540a0135d8afae59b8904d2954bd647d76ae58d6dcb52e969ebd47917cc83905",
+  "releaseNotes": "新增 2×2 取件小卡、4×1 取件横条、4×4 大号清单，保留原 4×2 清单和已放置的小组件。小卡与横条显示最新待取件，大清单最多显示 12 条。\n\n重新排版空状态，集中显示完成提示与打开入口；根据实际尺寸和字体大小自动调整布局、字号与显示条数。长取件码适配宽度，小尺寸优先显示待取数量和取件码。取件状态改变后四种规格同步刷新，覆盖升级时刷新旧卡片。\n\nAndroid 16 模拟器上通过 33 组原生小组件检查，覆盖正常、1.3 倍和 2 倍字体、空列表、长取件码、尺寸变化及点击跳转。包名、签名及权限保持兼容，可覆盖安装保留记录。"
 }

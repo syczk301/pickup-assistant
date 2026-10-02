@@ -1,0 +1,10 @@
+<resources>
+    <string name="widget_small_name">取件小卡 · 2×2</string>
+    <string name="widget_strip_name">取件横条 · 4×1</string>
+    <string name="widget_list_name">待取清单 · 4×2</string>
+    <string name="widget_large_name">大号清单 · 4×4</string>
+    <string name="widget_small_description">突出最新取件码，适合紧凑桌面</string>
+    <string name="widget_strip_description">一行查看待取数量和最新取件码</string>
+    <string name="widget_list_description">双栏显示取件码和驿站</string>
+    <string name="widget_large_description">显示更多待取包裹，可调整尺寸</string>
+</resources>

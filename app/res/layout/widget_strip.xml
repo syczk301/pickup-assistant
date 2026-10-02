@@ -1,0 +1,12 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/widget_root" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="horizontal" android:gravity="center_vertical" android:paddingLeft="12dp" android:paddingRight="12dp" android:paddingTop="8dp" android:paddingBottom="8dp" android:background="@drawable/widget_background">
+    <LinearLayout android:layout_width="44dp" android:layout_height="match_parent" android:orientation="vertical" android:gravity="center">
+        <TextView android:id="@+id/widget_label" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:includeFontPadding="false" android:singleLine="true" android:text="待取" android:textSize="10sp" android:textColor="#657789"/>
+        <TextView android:id="@+id/widget_title" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:includeFontPadding="false" android:singleLine="true" android:ellipsize="end" android:text="0" android:textSize="24sp" android:textStyle="bold" android:textColor="#1265D6"/>
+    </LinearLayout>
+    <LinearLayout android:layout_width="1dp" android:layout_height="match_parent" android:layout_marginStart="8dp" android:layout_marginEnd="8dp" android:background="#EAF0F5"/>
+    <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:orientation="vertical" android:gravity="center_vertical">
+        <TextView android:id="@+id/widget_code1" android:layout_width="match_parent" android:layout_height="wrap_content" android:includeFontPadding="false" android:singleLine="true" android:ellipsize="end" android:textSize="16sp" android:textColor="#08263C" android:text="都取完啦" android:textStyle="bold"/>
+        <TextView android:id="@+id/widget_meta1" android:layout_width="match_parent" android:layout_height="wrap_content" android:includeFontPadding="false" android:singleLine="true" android:ellipsize="end" android:textSize="10sp" android:textColor="#657789" android:text="轻松出门" android:layout_marginTop="2dp"/>
+    </LinearLayout>
+    <ImageView android:layout_width="16dp" android:layout_height="16dp" android:layout_marginStart="6dp" android:src="@drawable/ic_expand" android:rotation="270" android:tint="#1265D6" android:importantForAccessibility="no"/>
+</LinearLayout>
