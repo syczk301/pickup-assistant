@@ -78,7 +78,8 @@ def promote(candidate):
     beta_file = api("contents/update-beta.json?ref=" + head)
     if json.loads(base64.b64decode(beta_file["content"])) != current["metadata"]: raise ValueError("Candidate is not current Beta")
     tag = "v" + current["metadata"]["versionName"]
-    meta = dict(current["metadata"], channel="stable", apkUrl="https://github.com/" + REPO + "/releases/download/" + tag + "/" + current["apkName"])
+    notes = os.environ.get("STABLE_RELEASE_NOTES", "").strip() or current["metadata"]["releaseNotes"]
+    meta = dict(current["metadata"], channel="stable", apkUrl="https://github.com/" + REPO + "/releases/download/" + tag + "/" + current["apkName"], releaseNotes=notes)
     releases = api("releases?per_page=100")
     release = next((r for r in releases if r["tag_name"] == tag), None)
     if release and (release["prerelease"] or release["target_commitish"] != current["sourceCommit"]): raise ValueError("Existing stable release differs from reviewed candidate")

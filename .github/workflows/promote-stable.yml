@@ -6,6 +6,10 @@ on:
         description: Published Beta tag to review (e.g. v0.5.4-beta.1)
         required: true
         type: string
+      release_notes:
+        description: Release notes for the stable channel (optional)
+        required: false
+        type: string
 permissions:
   contents: read
 concurrency:
@@ -60,4 +64,5 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
           RELEASE_ENVIRONMENT: production
+          STABLE_RELEASE_NOTES: ${{ inputs.release_notes }}
         run: python app/release.py promote candidate.json
