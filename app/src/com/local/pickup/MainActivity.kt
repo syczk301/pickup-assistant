@@ -30,6 +30,8 @@ class MainActivity : Activity() {
     private var filterTab = 0
     private var sort = 0
     private var query = ""
+    private var searchOpen = false
+    private var searchInput: EditText? = null
     private var carrierFilter = "全部"
     private var dark = false
     private var ink = 0
@@ -65,6 +67,7 @@ class MainActivity : Activity() {
             filterTab = saved.getInt("filterTab")
             sort = saved.getInt("sort")
             query = saved.getString("query", "")
+            searchOpen = saved.getBoolean("searchOpen", query.isNotEmpty())
             carrierFilter = saved.getString("carrierFilter", "全部")
             expandedSettings.addAll(saved.getStringArrayList("expandedSettings") ?: emptyList())
             addDraft = saved.getBundle("addDraft")
@@ -82,6 +85,7 @@ class MainActivity : Activity() {
         state.putInt("filterTab", filterTab)
         state.putInt("sort", sort)
         state.putString("query", query)
+        state.putBoolean("searchOpen", searchOpen)
         state.putString("carrierFilter", carrierFilter)
         state.putStringArrayList("expandedSettings", ArrayList(expandedSettings))
         state.putBundle("addDraft", addSnapshot?.invoke() ?: addDraft)
@@ -186,6 +190,8 @@ class MainActivity : Activity() {
     private fun date(time: Long) = SimpleDateFormat("MM-dd HH:mm", Locale.CHINA).format(Date(time))
 
     private fun render() {
+        if (page != 0) hideSearchKeyboard()
+        searchInput = null
         updateStatus = null
         settingsSummaries.clear()
         dark = Store.prefs(this).getBoolean("dark", false)
@@ -258,7 +264,15 @@ class MainActivity : Activity() {
         val all = Store.load(this)
         val pending = all.count { it.completed == 0L }
         val title = row()
-        title.addView(text("拾件簿", 26, ink, true).apply { includeFontPadding = false }, LinearLayout.LayoutParams(0, -2, 1f))
+        title.addView(text("拾件簿", 26, ink, true).apply {
+            includeFontPadding = false
+            setSingleLine(); ellipsize = TextUtils.TruncateAt.END
+            setHorizontallyScrolling(false)
+            setAutoSizeTextTypeUniformWithConfiguration(18, 26, 1, android.util.TypedValue.COMPLEX_UNIT_SP)
+        }, LinearLayout.LayoutParams(0, -2, 1f))
+        title.addView(icon(R.drawable.ic_search, accent, if (searchOpen) "收起搜索" else "搜索包裹") {
+            if (searchOpen) closeSearch() else { searchOpen = true; render() }
+        }, LinearLayout.LayoutParams(dp(48), dp(48)))
         title.addView(icon(R.drawable.ic_identity, accent, "身份码") { identityCode() }, LinearLayout.LayoutParams(dp(48), dp(48)))
         title.addView(icon(R.drawable.ic_add, accent, "添加包裹") { addParcel() }, LinearLayout.LayoutParams(dp(48), dp(48)))
         header.addView(title)
@@ -278,17 +292,33 @@ class MainActivity : Activity() {
         }
         header.addView(tabs)
         divider(header)
-        space(header, 6)
-        val searchRow = row().apply { background = shape(if (dark) paper else 0xffe8f2f8.toInt(), 18) }
-        searchRow.addView(icon(R.drawable.ic_search, muted, "搜索"), LinearLayout.LayoutParams(dp(42), dp(40)))
-        val search = EditText(this).apply {
-            setSingleLine(); textSize = 15f; setTextColor(ink); setHintTextColor(muted)
-            hint = "搜索取件码、驿站、快递公司"
-            setPadding(0, 0, dp(10), 0); background = null; setText(query)
+        if (searchOpen) {
+            space(header, 6)
+            val searchRow = row().apply { background = shape(if (dark) paper else 0xffe8f2f8.toInt(), 18) }
+            searchRow.addView(icon(R.drawable.ic_search, muted, "包裹搜索"), LinearLayout.LayoutParams(dp(42), dp(48)))
+            val search = EditText(this).apply {
+                setSingleLine(); textSize = 15f; setTextColor(ink); setHintTextColor(muted)
+                hint = "搜索取件码、驿站、快递公司"
+                contentDescription = "搜索取件码、驿站、快递公司"
+                minHeight = dp(48)
+                setPadding(0, 0, 0, 0); background = null; setText(query)
+                imeOptions = android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH
+                setOnEditorActionListener { _, action, _ ->
+                    if (action == android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH) { hideSearchKeyboard(); true } else false
+                }
+            }
+            searchInput = search
+            searchRow.addView(search, LinearLayout.LayoutParams(0, -2, 1f))
+            searchRow.addView(icon(R.drawable.ic_close, muted, "关闭搜索") { closeSearch() }, LinearLayout.LayoutParams(dp(48), dp(48)))
+            header.addView(searchRow)
+            watch(search) { query = it; renderList() }
+            search.post {
+                if (!isDestroyed && !isFinishing && page == 0 && searchOpen && search === searchInput && search.isAttachedToWindow) {
+                    search.requestFocus(); search.setSelection(search.text.length)
+                    (getSystemService(INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager).showSoftInput(search, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
+                }
+            }
         }
-        searchRow.addView(search, LinearLayout.LayoutParams(0, dp(40), 1f))
-        header.addView(searchRow)
-        watch(search) { query = it; renderList() }
         val controls = row()
         fun control(label: String, color: Int, fn: () -> Unit): LinearLayout = row().apply {
             addView(text(label, 14, color, true))
@@ -306,6 +336,19 @@ class MainActivity : Activity() {
             AppDialogs.Builder(this).setTitle("快递公司筛选").setItems(withAll()) { _, index -> carrierFilter = withAll()[index]; render() }.show()
         })
         header.addView(controls, LinearLayout.LayoutParams(-1, dp(40)))
+    }
+
+    private fun hideSearchKeyboard() {
+        searchInput?.let {
+            (getSystemService(INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager).hideSoftInputFromWindow(it.windowToken, 0)
+        }
+    }
+
+    private fun closeSearch() {
+        hideSearchKeyboard()
+        query = ""
+        searchOpen = false
+        render()
     }
 
     private fun home() {
@@ -991,7 +1034,8 @@ class MainActivity : Activity() {
 
     @Deprecated("Legacy Android back navigation")
     override fun onBackPressed() {
-        if (!::updates.isInitialized || !updates.dismissPanel()) super.onBackPressed()
+        if (::updates.isInitialized && updates.dismissPanel()) return
+        if (page == 0 && searchOpen) closeSearch() else super.onBackPressed()
     }
 
     private fun settings() {
