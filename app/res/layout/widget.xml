@@ -73,8 +73,7 @@
 </LinearLayout>
 <LinearLayout android:id="@+id/widget_sep6" android:layout_width="match_parent" android:layout_height="1dp" android:background="#EAF0F5" android:visibility="gone"/>
 </LinearLayout>
-<LinearLayout android:id="@+id/widget_footer" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:orientation="horizontal" android:gravity="center_vertical" android:visibility="gone">
-    <TextView android:id="@+id/widget_more" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:includeFontPadding="false" android:singleLine="true" android:ellipsize="end" android:textSize="11sp" android:textColor="#657789"/>
+<LinearLayout android:id="@+id/widget_footer" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:orientation="horizontal" android:gravity="end|center_vertical" android:visibility="gone">
     <TextView android:id="@+id/widget_open" android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:singleLine="true" android:text="查看全部" android:textSize="11sp" android:textColor="#1265D6"/>
     <ImageView android:layout_width="16dp" android:layout_height="16dp" android:layout_marginStart="4dp" android:src="@drawable/ic_expand" android:rotation="270" android:tint="#1265D6" android:importantForAccessibility="no"/>
 </LinearLayout>

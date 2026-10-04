@@ -158,8 +158,6 @@ open class PickupWidget : AppWidgetProvider() {
                     }
                 }
             }
-            val remaining = pending.size - shown.size
-            result.setTextViewText(R.id.widget_more, if (remaining > 0) "还有 $remaining 件" else "${pending.size} 件待取")
             return result
         }
 

@@ -2,11 +2,11 @@
   "schemaVersion": 1,
   "packageName": "com.local.pickup",
   "channel": "beta",
-  "versionCode": 35,
-  "versionName": "0.5.18",
+  "versionCode": 36,
+  "versionName": "0.5.19",
   "minSdk": 26,
-  "apkUrl": "https://github.com/syczk301/pickup-assistant/releases/download/v0.5.18-beta.1/pickup-assistant-0.5.18.apk",
+  "apkUrl": "https://github.com/syczk301/pickup-assistant/releases/download/v0.5.19-beta.1/pickup-assistant-0.5.19.apk",
   "sizeBytes": 19305961,
-  "sha256": "e300e1c77065ab73bd6ac31e6ef4be804c81b7d650b84905ebdf68cbc86d86e6",
-  "releaseNotes": "拾件簿 0.5.18 Beta 1\n\n点击取件码打开包裹详情和操作菜单，点击不会自动复制。长按仍可打开菜单，复制需要主动选择“复制取件码”。\n\nAndroid 16 隔离模拟器通过普通字体和 2 倍字体下的单击、长按、菜单复制、编辑取消、取件状态切换和搜索结果操作检查；0.5.17 覆盖升级保留完整记录，主页布局保持一致。尚未在用户手机上验证。\n\n旧版应用内更新有问题时，请用手机浏览器下载本 APK 后直接覆盖安装，无需卸载。"
+  "sha256": "4dbe78570314a3205ea58d118ec05c176123fa812fe57fcf177cb6652e41bc29",
+  "releaseNotes": "拾件簿 0.5.19 Beta 1\n\n去掉 4×2 清单和 4×4 大号清单小组件左下角的待取／剩余数量提示，底部“查看全部”靠右显示。\n\nAndroid 16 隔离模拟器使用生产 APK 的 RemoteViews 检查四种默认尺寸、普通字体和 2 倍字体下的空清单、1 件及 13 件记录；0.5.18 覆盖升级保留完整记录。尚未在用户手机桌面上验证。\n\n旧版应用内更新有问题时，请用手机浏览器下载本 APK 后直接覆盖安装，无需卸载。"
 }
