@@ -432,7 +432,12 @@ class MainActivity : Activity() {
                 })
                 lastDay = day
             }
-            val item = col().apply { setPadding(0, dp(5), 0, dp(7)); contentDescription = "包裹详情 ${p.code}"; setOnClickListener { detail(p) } }
+            val item = col().apply {
+                setPadding(0, dp(5), 0, dp(7))
+                contentDescription = "包裹详情 ${p.code}，长按打开操作菜单"
+                setOnClickListener { detail(p) }
+                setOnLongClickListener { detail(p); true }
+            }
             val summary = if (p.station.isEmpty()) p.carrier else if (p.station == p.carrier) p.station else "${p.station} · ${p.carrier}"
             item.addView(text(summary, 13, muted).apply {
                 setPadding(0, 0, dp(4), 0)
@@ -447,7 +452,9 @@ class MainActivity : Activity() {
             codeRow.addView(text(p.code, if (p.code.length > 9) 23 else 28, if (p.completed == 0L) ink else muted, true).apply {
                 setSingleLine(); ellipsize = TextUtils.TruncateAt.END; includeFontPadding = false
                 setAutoSizeTextTypeUniformWithConfiguration(12, if (p.code.length > 9) 23 else 28, 1, android.util.TypedValue.COMPLEX_UNIT_SP)
-                contentDescription = "取件码 ${p.code}，点击复制"; setOnClickListener { copy(p.code) }
+                contentDescription = "取件码 ${p.code}，点击复制，长按打开操作菜单"
+                setOnClickListener { copy(p.code) }
+                setOnLongClickListener { detail(p); true }
             }, LinearLayout.LayoutParams(0, -2, 1f))
             content.addView(codeRow, LinearLayout.LayoutParams(0, -2, 1f).apply { gravity = Gravity.TOP; topMargin = dp(4) })
             content.addView(View(this).apply { setBackgroundColor(if (dark) 0xff2c3c4b.toInt() else 0xffeaf0f4.toInt()) }, LinearLayout.LayoutParams(dp(1), dp(42)).apply { leftMargin = dp(8); rightMargin = dp(6) })
@@ -538,9 +545,9 @@ class MainActivity : Activity() {
         }
     }
 
-    private fun styleCarrier(spinner: Spinner) {
+    private fun styleCarrier(spinner: Spinner, companies: Array<String> = SmsParser.CARRIERS) {
         spinner.setPopupBackgroundDrawable(shape(paper, 16))
-        spinner.adapter = object : ArrayAdapter<String>(this, android.R.layout.simple_spinner_dropdown_item, SmsParser.CARRIERS) {
+        spinner.adapter = object : ArrayAdapter<String>(this, android.R.layout.simple_spinner_dropdown_item, companies) {
             private fun option(position: Int, dropdown: Boolean): View {
                 val name = getItem(position).orEmpty()
                 return row().apply {
@@ -565,16 +572,11 @@ class MainActivity : Activity() {
         val layout = col().apply { setPadding(dp(20), dp(4), dp(20), dp(12)) }
         val code = field(layout, "取件码 *", old?.code.orEmpty(), false)
         layout.addView(text("快递公司 *", 13, muted, true).apply { setPadding(0, dp(12), 0, dp(6)) })
+        val companies = if (old.carrier in SmsParser.CARRIERS) SmsParser.CARRIERS else SmsParser.CARRIERS + old.carrier
         val carrier =
             Spinner(this).apply {
-                adapter =
-                    ArrayAdapter(
-                        this@MainActivity,
-                        android.R.layout.simple_spinner_dropdown_item,
-                        SmsParser.CARRIERS,
-                    )
-                styleCarrier(this)
-                SmsParser.CARRIERS.indexOf(old.carrier).takeIf { it >= 0 }?.let(::setSelection)
+                styleCarrier(this, companies)
+                setSelection(companies.indexOf(old.carrier))
             }
         layout.addView(carrier)
         val station = field(layout, "驿站名称 / 地址", old?.station.orEmpty(), false)
