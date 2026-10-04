@@ -497,8 +497,8 @@ class MainActivity : Activity() {
                 setSingleLine(); ellipsize = TextUtils.TruncateAt.END; includeFontPadding = false
                 setHorizontallyScrolling(false)
                 setAutoSizeTextTypeUniformWithConfiguration(12, if (p.code.length > 9) 23 else 28, 1, android.util.TypedValue.COMPLEX_UNIT_SP)
-                contentDescription = "取件码 ${p.code}，点击复制，长按打开操作菜单"
-                setOnClickListener { copy(p.code) }
+                contentDescription = "取件码 ${p.code}，点击查看详情，长按打开操作菜单"
+                setOnClickListener { detail(p) }
                 setOnLongClickListener { detail(p); true }
             }
             codeRow.addView(code, LinearLayout.LayoutParams(0, -2, 1f))
