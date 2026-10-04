@@ -432,28 +432,25 @@ class MainActivity : Activity() {
                 })
                 lastDay = day
             }
-            val item = row().apply { setPadding(0, dp(5), 0, dp(7)); contentDescription = "包裹详情 ${p.code}"; setOnClickListener { detail(p) } }
-            val info = col()
-            val codeRow = row()
-            codeRow.addView(text(p.code, if (p.code.length > 9) 23 else 28, if (p.completed == 0L) ink else muted, true).apply {
-                setSingleLine(); ellipsize = TextUtils.TruncateAt.END; includeFontPadding = false
-                contentDescription = "取件码 ${p.code}，点击复制"; setOnClickListener { copy(p.code) }
-            }, LinearLayout.LayoutParams(0, -2, 1f))
-            codeRow.addView(icon(R.drawable.ic_copy, accent, "复制取件码 ${p.code}") { copy(p.code) }.apply { setPadding(dp(11), dp(11), dp(11), dp(11)) }, LinearLayout.LayoutParams(dp(40), dp(40)))
-            info.addView(codeRow)
-            space(info, 2)
-            val detailRow = row()
-            detailRow.addView(CarrierLogos.view(this, p.carrier), LinearLayout.LayoutParams(dp(CarrierLogos.widthDp(p.carrier)), dp(28)))
+            val item = col().apply { setPadding(0, dp(5), 0, dp(7)); contentDescription = "包裹详情 ${p.code}"; setOnClickListener { detail(p) } }
             val summary = if (p.station.isEmpty()) p.carrier else if (p.station == p.carrier) p.station else "${p.station} · ${p.carrier}"
-            detailRow.addView(text(summary, 13, muted).apply {
-                setPadding(dp(8), 0, dp(4), 0)
+            item.addView(text(summary, 13, muted).apply {
+                setPadding(0, 0, dp(4), 0)
                 includeFontPadding = false
                 setSingleLine(); ellipsize = TextUtils.TruncateAt.END
                 contentDescription = "驿站 ${p.station.ifEmpty { "未填写" }}，快递公司 ${p.carrier}"
+            }, LinearLayout.LayoutParams(-1, -2))
+            space(item, 8)
+            val content = row()
+            val codeRow = row()
+            codeRow.addView(CarrierLogos.view(this, p.carrier), LinearLayout.LayoutParams(dp(CarrierLogos.widthDp(p.carrier)), dp(28)).apply { rightMargin = dp(8) })
+            codeRow.addView(text(p.code, if (p.code.length > 9) 23 else 28, if (p.completed == 0L) ink else muted, true).apply {
+                setSingleLine(); ellipsize = TextUtils.TruncateAt.END; includeFontPadding = false
+                setAutoSizeTextTypeUniformWithConfiguration(12, if (p.code.length > 9) 23 else 28, 1, android.util.TypedValue.COMPLEX_UNIT_SP)
+                contentDescription = "取件码 ${p.code}，点击复制"; setOnClickListener { copy(p.code) }
             }, LinearLayout.LayoutParams(0, -2, 1f))
-            info.addView(detailRow)
-            item.addView(info, LinearLayout.LayoutParams(0, -2, 1f))
-            item.addView(View(this).apply { setBackgroundColor(if (dark) 0xff2c3c4b.toInt() else 0xffeaf0f4.toInt()) }, LinearLayout.LayoutParams(dp(1), dp(42)).apply { leftMargin = dp(8); rightMargin = dp(6) })
+            content.addView(codeRow, LinearLayout.LayoutParams(0, -2, 1f).apply { gravity = Gravity.TOP; topMargin = dp(4) })
+            content.addView(View(this).apply { setBackgroundColor(if (dark) 0xff2c3c4b.toInt() else 0xffeaf0f4.toInt()) }, LinearLayout.LayoutParams(dp(1), dp(42)).apply { leftMargin = dp(8); rightMargin = dp(6) })
             val mark = col().apply {
                 gravity = Gravity.CENTER
                 contentDescription = (if (p.completed == 0L) "标记已取 " else "恢复待取 ") + p.code
@@ -465,7 +462,8 @@ class MainActivity : Activity() {
                 }, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT))
                 setOnClickListener { status(p.id, p.completed == 0L) }
             }
-            item.addView(mark, LinearLayout.LayoutParams(dp(58), dp(60)))
+            content.addView(mark, LinearLayout.LayoutParams(dp(58), dp(60)))
+            item.addView(content)
             listing.addView(item)
             divider(listing)
         }
