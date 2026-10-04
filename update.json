@@ -2,11 +2,11 @@
   "schemaVersion": 1,
   "packageName": "com.local.pickup",
   "channel": "stable",
-  "versionCode": 22,
-  "versionName": "0.5.5",
+  "versionCode": 36,
+  "versionName": "0.5.19",
   "minSdk": 26,
-  "apkUrl": "https://github.com/syczk301/pickup-assistant/releases/download/v0.5.5/pickup-assistant-0.5.5.apk",
-  "sizeBytes": 2549693,
-  "sha256": "ddae98c12b517ab95438dbf65583a211fe9b973d2afbd0a8b3d50a0babee20d6",
-  "releaseNotes": "应用更名为“拾件簿”，图标改为深青底色、米白标签卡，包含打孔、条码与取件勾选。同步更新首页、设置、小组件说明、安装提示和通知名称。使用原包名和签名，覆盖安装保留取件记录。此版本先发布到测试渠道。"
+  "apkUrl": "https://github.com/syczk301/pickup-assistant/releases/download/v0.5.19/pickup-assistant-0.5.19.apk",
+  "sizeBytes": 19305961,
+  "sha256": "4dbe78570314a3205ea58d118ec05c176123fa812fe57fcf177cb6652e41bc29",
+  "releaseNotes": "拾件簿 0.5.19 正式版\n\n- 主页突出取件码，移除常驻搜索栏和复制按钮，点击右上角放大镜展开搜索。\n- 点击取件码查看详情，长按打开操作菜单；复制、编辑和删除从菜单中选择，点击不会自动复制。\n- 图片识别改进快递公司和驿站提取，默认显示取件信息，完整识别原文单独查看；修复弹窗按钮显示问题。\n- 接入 11 个快递及驿站品牌的官方标识，本地显示。\n- 提供 2×2、4×1、4×2、4×4 四种小组件；移除清单小组件左下角重复的数量提示。\n- 更新下载支持切换应用后继续，失败时保留原因并可重试，安装前校验文件大小、SHA-256、包名、版本和签名。\n\n使用原包名和签名，覆盖安装保留取件记录。正式版使用已验证的 0.5.19 测试版同一份 APK。\n\n旧版应用内更新有问题时，请用手机浏览器下载 APK 后直接覆盖安装，无需卸载。"
 }
