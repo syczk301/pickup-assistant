@@ -446,7 +446,7 @@ class MainActivity : Activity() {
                 contentDescription = "驿站 ${p.station.ifEmpty { "未填写" }}，快递公司 ${p.carrier}"
             }, LinearLayout.LayoutParams(-1, -2))
             space(item, 8)
-            val content = GridLayout(this).apply { columnCount = 3; rowCount = 2 }
+            val content = GridLayout(this).apply { columnCount = 3; rowCount = 1 }
             val codeRow = row().apply { isBaselineAligned = false }
             val logo = CarrierLogos.view(this, p.carrier)
             codeRow.addView(logo, LinearLayout.LayoutParams(dp(CarrierLogos.widthDp(p.carrier)), dp(28)).apply { rightMargin = dp(8) })
@@ -468,15 +468,6 @@ class MainActivity : Activity() {
                 setOnClickListener { status(p.id, p.completed == 0L) }
             }
             content.addView(mark, GridLayout.LayoutParams(GridLayout.spec(0, GridLayout.CENTER), GridLayout.spec(2)).apply { width = dp(58); height = dp(48) })
-            content.addView(text(if (p.completed == 0L) "标记已取" else "恢复待取", 11, muted).apply {
-                gravity = Gravity.CENTER
-                setSingleLine()
-                setHorizontallyScrolling(false)
-                includeFontPadding = false
-                setAutoSizeTextTypeUniformWithConfiguration(7, 11, 1, android.util.TypedValue.COMPLEX_UNIT_SP)
-                importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
-                setOnClickListener { status(p.id, p.completed == 0L) }
-            }, GridLayout.LayoutParams(GridLayout.spec(1), GridLayout.spec(2)).apply { width = dp(58); height = -2 })
             content.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
                 // Center the visible glyphs, rather than the font's asymmetric ascent/descent box.
                 val bounds = android.graphics.Rect()
@@ -509,21 +500,25 @@ class MainActivity : Activity() {
         }
 
     private fun detail(p: Store.Parcel) {
+        val content = ImageParcelText.split(p.source, p.note)
+        val options = mutableListOf("复制取件码", "编辑信息", if (p.completed == 0L) "标记已取" else "恢复待取", "删除记录")
+        if (content.original.isNotBlank()) options.add("查看识别原文")
         AppDialogs.Builder(this)
             .setTitle("${p.code} · ${p.carrier}")
             .setMessage(
                 "驿站：${p.station.ifEmpty { "未填写" }}\n收到：${date(p.created)}" +
                     (if (p.completed > 0) "\n取件：${date(p.completed)}" else "") +
-                    "\n来源：${p.source}\n\n${p.note}"
+                    "\n来源：${p.source}" +
+                    (if (content.note.isNotBlank()) "\n\n备注：${content.note}" else "")
             )
             .setItems(
-                arrayOf("复制取件码", "编辑信息", if (p.completed == 0L) "标记已取" else "恢复待取", "删除记录")
+                options.toTypedArray()
             ) { _, index ->
                 when (index) {
                     0 -> copy(p.code)
                     1 -> edit(p)
                     2 -> status(p.id, p.completed == 0L)
-                    else ->
+                    3 ->
                         confirm("删除包裹", "删除取件码 ${p.code}？") {
                             synchronized(Store) {
                                 val all = Store.load(this)
@@ -532,9 +527,21 @@ class MainActivity : Activity() {
                                 render()
                             }
                         }
+                    4 -> showOriginal(content.original) { detail(p) }
                 }
             }
             .setNegativeButton("关闭", null)
+            .show()
+    }
+
+    private fun showOriginal(original: String, back: (() -> Unit)? = null) {
+        val content = col().apply {
+            setPadding(dp(24), dp(4), dp(24), dp(16))
+            addView(text(original, 14, ink).apply { setTextIsSelectable(true) })
+        }
+        AppDialogs.Builder(this).setTitle("图片识别原文")
+            .setView(ScrollView(this).apply { addView(content) })
+            .setNegativeButton(if (back == null) "关闭" else "返回") { _, _ -> back?.invoke() }
             .show()
     }
 
@@ -595,7 +602,8 @@ class MainActivity : Activity() {
             }
         layout.addView(carrier)
         val station = field(layout, "驿站名称 / 地址", old?.station.orEmpty(), false)
-        val note = field(layout, "备注", old?.note.orEmpty(), true)
+        val imageContent = ImageParcelText.split(old.source, old.note)
+        val note = field(layout, "备注", imageContent.note, true)
         val dialog =
             AppDialogs.Builder(this)
                 .setTitle(if (old == null) "添加取件码" else "编辑包裹")
@@ -629,7 +637,8 @@ class MainActivity : Activity() {
                             this.code = value
                             this.carrier = company
                             this.station = station.text.toString().trim()
-                            this.note = note.text.toString().trim()
+                            this.note = if (old.source == "图片识别") ImageParcelText.join(note.text.toString(), imageContent.original)
+                                else note.text.toString().trim()
                         }
                     if (old == null) all.add(p)
                     else {
@@ -650,6 +659,8 @@ class MainActivity : Activity() {
         val restored = addDraft
         addDraft = null
         var fromImage = restored?.getBoolean("fromImage", false) ?: false
+        var imageOriginal = restored?.getString("imageOriginal")
+            ?: if (fromImage) restored?.getString("sms", "").orEmpty() else ""
         val layout = col().apply { setPadding(dp(20), dp(8), dp(20), dp(16)) }
         fun section(label: String) {
             layout.addView(text(label, 17, ink, true).apply { setPadding(0, dp(8), 0, dp(6)); includeFontPadding = false })
@@ -663,11 +674,11 @@ class MainActivity : Activity() {
             layout.addView(this, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(8) })
         }
         section("短信 / 图片内容")
-        val sms = entry("粘贴短信，或选择图片识别后查看原文", true)
+        val sms = entry("粘贴短信，或选择图片识别取件信息", true)
         val pasteButton = action("粘贴短信") {
             val clip = (getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager).primaryClip
             val value = if (clip != null && clip.itemCount > 0) clip.getItemAt(0).coerceToText(this).toString() else ""
-            if (value.isBlank()) toast("剪贴板没有文字") else { fromImage = false; sms.setText(value); sms.clearFocus() }
+            if (value.isBlank()) toast("剪贴板没有文字") else { fromImage = false; imageOriginal = ""; sms.setText(value); sms.clearFocus() }
         }
         val imageButton = action("图片识别") {
             try {
@@ -681,6 +692,8 @@ class MainActivity : Activity() {
         inputs.addView(pasteButton, LinearLayout.LayoutParams(0, -2, 1f).apply { rightMargin = dp(4) })
         inputs.addView(imageButton, LinearLayout.LayoutParams(0, -2, 1f).apply { leftMargin = dp(4) })
         layout.addView(inputs, LinearLayout.LayoutParams(-1, -2))
+        val originalButton = action("查看识别原文") { showOriginal(imageOriginal) }.apply { visibility = View.GONE }
+        layout.addView(originalButton, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(6) })
         layout.addView(text("图片在本机识别，不上传；请核对后保存", 11, muted).apply { setPadding(0, dp(6), 0, 0) })
         val result = text("也可以直接填写下方取件信息", 12, muted).apply { setPadding(0, dp(8), 0, dp(8)) }
         layout.addView(result)
@@ -712,7 +725,7 @@ class MainActivity : Activity() {
                 var added = 0
                 for (candidate in parsed) {
                     if (records.none { it.completed == 0L && it.code.equals(candidate.code, true) && it.carrier == candidate.carrier }) {
-                        records.add(Store.make(candidate.code, candidate.carrier, candidate.station, sms.text.toString(), "图片识别")); added++
+                        records.add(Store.make(candidate.code, candidate.carrier, candidate.station, ImageParcelText.join(note.text.toString(), imageOriginal), "图片识别")); added++
                     }
                 }
                 if (added > 0) Store.save(this, records)
@@ -723,6 +736,7 @@ class MainActivity : Activity() {
         }.apply { visibility = View.GONE }
         layout.addView(allButton, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })
         watch(sms) { value ->
+            originalButton.visibility = if (fromImage && imageOriginal.isNotBlank()) View.VISIBLE else View.GONE
             val image = if (fromImage) ImageParcelParser.parse(value) else null
             parsed = image?.parcels ?: SmsParser.parse(value)
             if (parsed.isNotEmpty()) fill(parsed.first())
@@ -760,7 +774,7 @@ class MainActivity : Activity() {
                     }
                     val parcel = Store.make(value, company, station.text.toString().trim(), note.text.toString().trim(), if (fromImage) "图片识别" else if (sms.text.isBlank()) "手动添加" else "短信识别")
                     if (sms.text.isNotBlank()) {
-                        if (fromImage) parcel.note = listOf(note.text.toString().trim(), "图片识别原文：\n${sms.text}").filter { it.isNotBlank() }.joinToString("\n\n")
+                        if (fromImage) parcel.note = ImageParcelText.join(note.text.toString(), imageOriginal)
                         else parcel.source = sms.text.toString()
                     }
                     records.add(parcel); Store.save(this, records)
@@ -773,6 +787,7 @@ class MainActivity : Activity() {
                 putString("sms", sms.text.toString()); putString("code", code.text.toString())
                 putString("station", station.text.toString()); putString("note", note.text.toString())
                 putInt("carrier", carrier.selectedItemPosition); putBoolean("fromImage", fromImage)
+                putString("imageOriginal", imageOriginal)
             }
         }
         fun releaseImage(uri: Uri?) {
@@ -793,7 +808,7 @@ class MainActivity : Activity() {
                     dialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = true
                     if (error != null) { result.text = error; result.setTextColor(muted) }
                     else if (recognized.isNullOrBlank()) { result.text = "图片中没有识别到文字，请换一张清晰截图或手动填写"; result.setTextColor(muted) }
-                    else { fromImage = true; sms.setText(recognized); sms.clearFocus() }
+                    else { fromImage = true; imageOriginal = recognized; sms.setText(ImageParcelText.preview(recognized)); sms.clearFocus() }
                 }
             }
         }
@@ -804,7 +819,7 @@ class MainActivity : Activity() {
         }
         dialog.show()
         restored?.let {
-            sms.setText(it.getString("sms", "")); code.setText(it.getString("code", ""))
+            sms.setText(if (fromImage && !it.containsKey("imageOriginal")) ImageParcelText.preview(imageOriginal) else it.getString("sms", "")); code.setText(it.getString("code", ""))
             station.setText(it.getString("station", "")); note.setText(it.getString("note", ""))
             carrier.setSelection(it.getInt("carrier", SmsParser.CARRIERS.lastIndex).coerceIn(0, SmsParser.CARRIERS.lastIndex))
         }

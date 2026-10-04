@@ -21,7 +21,7 @@ if not JSON.exists():
 cp = os.pathsep.join(str(p) for p in [CLASSES, JSON, ANDROID, KOTLIN/'lib/kotlin-stdlib.jar'])
 java = str(JAVA_HOME/'bin/java.exe')
 subprocess.run([java, '-cp', str(KOTLIN/'lib/*'), 'org.jetbrains.kotlin.cli.jvm.K2JVMCompiler', '-kotlin-home', str(KOTLIN), '-no-reflect', '-jvm-target', '1.8', '-classpath', cp, '-d', str(OUT), *map(str, sorted((ROOT/'tests').glob('*.kt')))], check=True)
-for test in ['ParserTestKt', 'UpdateProtocolTestKt', 'UpdateTransferTestKt', 'MigrationTestKt', 'ImageParcelParserTestKt']:
+for test in ['ParserTestKt', 'UpdateProtocolTestKt', 'UpdateTransferTestKt', 'MigrationTestKt', 'ImageParcelParserTestKt', 'ImageParcelTextTestKt']:
     # Use TCP loopback for the HTTP fixture on Windows JDKs with a broken AF_UNIX pipe.
     options = ['-Djdk.net.unixdomain.tmpdir=' + str(OUT/'no-unix-sockets')] if os.name == 'nt' and test == 'UpdateTransferTestKt' else []
     subprocess.run([java, *options, '-cp', str(OUT)+os.pathsep+cp, test], check=True)

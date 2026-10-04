@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.local.pickup" android:versionCode="32" android:versionName="0.5.15">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.local.pickup" android:versionCode="33" android:versionName="0.5.16">
  <uses-sdk android:minSdkVersion="26" android:targetSdkVersion="34"/>
  <uses-permission android:name="android.permission.RECEIVE_SMS"/>
  <uses-permission android:name="android.permission.READ_SMS"/>
