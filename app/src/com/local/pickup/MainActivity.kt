@@ -446,30 +446,45 @@ class MainActivity : Activity() {
                 contentDescription = "驿站 ${p.station.ifEmpty { "未填写" }}，快递公司 ${p.carrier}"
             }, LinearLayout.LayoutParams(-1, -2))
             space(item, 8)
-            val content = row()
-            val codeRow = row()
-            codeRow.addView(CarrierLogos.view(this, p.carrier), LinearLayout.LayoutParams(dp(CarrierLogos.widthDp(p.carrier)), dp(28)).apply { rightMargin = dp(8) })
-            codeRow.addView(text(p.code, if (p.code.length > 9) 23 else 28, if (p.completed == 0L) ink else muted, true).apply {
+            val content = GridLayout(this).apply { columnCount = 3; rowCount = 2 }
+            val codeRow = row().apply { isBaselineAligned = false }
+            val logo = CarrierLogos.view(this, p.carrier)
+            codeRow.addView(logo, LinearLayout.LayoutParams(dp(CarrierLogos.widthDp(p.carrier)), dp(28)).apply { rightMargin = dp(8) })
+            val code = text(p.code, if (p.code.length > 9) 23 else 28, if (p.completed == 0L) ink else muted, true).apply {
                 setSingleLine(); ellipsize = TextUtils.TruncateAt.END; includeFontPadding = false
+                setHorizontallyScrolling(false)
                 setAutoSizeTextTypeUniformWithConfiguration(12, if (p.code.length > 9) 23 else 28, 1, android.util.TypedValue.COMPLEX_UNIT_SP)
                 contentDescription = "取件码 ${p.code}，点击复制，长按打开操作菜单"
                 setOnClickListener { copy(p.code) }
                 setOnLongClickListener { detail(p); true }
-            }, LinearLayout.LayoutParams(0, -2, 1f))
-            content.addView(codeRow, LinearLayout.LayoutParams(0, -2, 1f).apply { gravity = Gravity.TOP; topMargin = dp(4) })
-            content.addView(View(this).apply { setBackgroundColor(if (dark) 0xff2c3c4b.toInt() else 0xffeaf0f4.toInt()) }, LinearLayout.LayoutParams(dp(1), dp(42)).apply { leftMargin = dp(8); rightMargin = dp(6) })
-            val mark = col().apply {
-                gravity = Gravity.CENTER
+            }
+            codeRow.addView(code, LinearLayout.LayoutParams(0, -2, 1f))
+            content.addView(codeRow, GridLayout.LayoutParams(GridLayout.spec(0, GridLayout.CENTER), GridLayout.spec(0, GridLayout.FILL, 1f)).apply { width = 0; height = -2 })
+            content.addView(View(this).apply { setBackgroundColor(if (dark) 0xff2c3c4b.toInt() else 0xffeaf0f4.toInt()) }, GridLayout.LayoutParams(GridLayout.spec(0, GridLayout.CENTER), GridLayout.spec(1)).apply { width = dp(1); height = dp(42); leftMargin = dp(8); rightMargin = dp(6) })
+            val statusIcon = icon(if (p.completed == 0L) R.drawable.ic_pending else R.drawable.ic_done, if (p.completed == 0L) muted else accent, "取件状态").apply { setPadding(dp(6), dp(6), dp(6), dp(6)) }
+            val mark = FrameLayout(this).apply {
                 contentDescription = (if (p.completed == 0L) "标记已取 " else "恢复待取 ") + p.code
-                addView(icon(if (p.completed == 0L) R.drawable.ic_pending else R.drawable.ic_done, if (p.completed == 0L) muted else accent, "取件状态").apply { setPadding(dp(6), dp(6), dp(6), dp(6)) }, LinearLayout.LayoutParams(dp(40), dp(40)).apply { gravity = Gravity.CENTER_HORIZONTAL })
-                addView(text(if (p.completed == 0L) "标记已取" else "恢复待取", 11, muted).apply {
-                    gravity = Gravity.CENTER
-                    setSingleLine()
-                    includeFontPadding = false
-                }, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT))
+                addView(statusIcon, FrameLayout.LayoutParams(dp(40), dp(40), Gravity.CENTER))
                 setOnClickListener { status(p.id, p.completed == 0L) }
             }
-            content.addView(mark, LinearLayout.LayoutParams(dp(58), dp(60)))
+            content.addView(mark, GridLayout.LayoutParams(GridLayout.spec(0, GridLayout.CENTER), GridLayout.spec(2)).apply { width = dp(58); height = dp(48) })
+            content.addView(text(if (p.completed == 0L) "标记已取" else "恢复待取", 11, muted).apply {
+                gravity = Gravity.CENTER
+                setSingleLine()
+                setHorizontallyScrolling(false)
+                includeFontPadding = false
+                setAutoSizeTextTypeUniformWithConfiguration(7, 11, 1, android.util.TypedValue.COMPLEX_UNIT_SP)
+                importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+                setOnClickListener { status(p.id, p.completed == 0L) }
+            }, GridLayout.LayoutParams(GridLayout.spec(1), GridLayout.spec(2)).apply { width = dp(58); height = -2 })
+            content.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
+                // Center the visible glyphs, rather than the font's asymmetric ascent/descent box.
+                val bounds = android.graphics.Rect()
+                code.paint.getTextBounds(p.code, 0, p.code.length, bounds)
+                val center = mark.top + statusIcon.top + statusIcon.height / 2f
+                logo.translationY = center - codeRow.top - logo.top - logo.height / 2f
+                code.translationY = center - codeRow.top - code.top - code.baseline - bounds.exactCenterY()
+            }
             item.addView(content)
             listing.addView(item)
             divider(listing)
