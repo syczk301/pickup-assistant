@@ -49,4 +49,10 @@ Numeric contrast checking found [P2] smaller semantic text colors at ratios 3.94
 - [x] Vite production build uses relative paths for GitHub project Pages.
 - Live deployment verification is recorded separately in `../deliverables/website-publication.json`.
 
+## Iteration 4 — wide-screen overlap regression, passed
+
+User evidence exposed a P2 regression outside the original viewport matrix. At 2560 CSS px, the absolutely positioned scene grew while the shell was capped at 1250 px; phone top crossed metadata bottom by 226.32 px. Removed the fixed/capped shell height. Content now determines height, with bottom space derived from the scene's phone position plus a 32 px gap. Scene width is capped at the 1476 px reference composition; tablet uses its existing 1177 px composition and mobile retains its separate scene row.
+
+Browser measurements at 3440, 2560, 1920 and 1476 px show a 32 px metadata-to-phone gap. At 1024/768 it is 57.97 px, and at 390/320 it is 83.01 px. All eight widths have no horizontal page overflow. Evidence: `../deliverables/website-overlap-checks.json`. Recaptured `qa/desktop-final.jpg` and `qa/mobile-final.jpg`; reference and updated desktop were inspected together, including the title, description, CTA, version and phone boundary. Typography, colors, copy, assets and the selected still-life composition remain intact. No console errors or warnings. Previous comparison board documents earlier iterations; this iteration's paired reference/capture review supersedes its spacing result.
+
 final result: passed
