@@ -1,0 +1,61 @@
+name: Deploy official website
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'website/**'
+      - 'update.json'
+      - '.github/workflows/deploy-pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pages: read
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v6
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+      - name: Install dependencies
+        working-directory: website
+        run: npm ci --no-audit --no-fund
+      - name: Build website
+        working-directory: website
+        run: npm run build
+      - name: Upload static website
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: website/dist/client
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

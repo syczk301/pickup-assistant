@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://syczk301.github.io/pickup-assistant/sitemap.xml

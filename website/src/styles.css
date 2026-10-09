@@ -1,0 +1,112 @@
+@font-face { font-family: 'Pickup Sans'; src: url('../public/assets/pickup-sans.woff2') format('woff2'); font-weight: 100 900; font-display: swap; }
+:root { font-family: 'Pickup Sans', 'Noto Sans SC', 'Microsoft YaHei', sans-serif; color: #08263c; background: #fdfcf9; font-synthesis: none; --ink: #08263c; --blue: #0865ed; --muted: #586f85; }
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 28px; }
+body { margin: 0; min-width: 320px; -webkit-font-smoothing: antialiased; }
+a { color: inherit; text-decoration: none; -webkit-tap-highlight-color: transparent; }
+button, a, summary { touch-action: manipulation; }
+a:focus-visible, summary:focus-visible { outline: 3px solid #0865ed; outline-offset: 6px; border-radius: 4px; }
+img { display: block; max-width: 100%; }
+p, h1, h2, h3, figure { margin: 0; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+.skip-link { position: fixed; z-index: 20; top: 10px; left: 12px; padding: 10px 16px; background: white; transform: translateY(-150%); }
+.skip-link:focus { transform: none; }
+.hero-shell { position: relative; isolation: isolate; height: calc(100vw * 1066 / 1476); min-height: 980px; max-height: 1250px; overflow: hidden; }
+.hero-art { position: absolute; z-index: -1; inset: 0; }
+.hero-scene { position: absolute; bottom: 0; width: 100%; height: auto; }
+.site-header { max-width: 1260px; margin-inline: auto; height: 76px; display: flex; align-items: center; justify-content: space-between; gap: 24px; position: relative; z-index: 2; }
+.brand { display: inline-flex; align-items: center; gap: 18px; white-space: nowrap; }
+.brand img { width: 48px; height: 48px; }
+.brand-name { font-size: 31px; font-weight: 800; letter-spacing: .02em; }
+.brand-tagline { font-size: 18px; margin-left: 1px; }
+.site-header nav { display: flex; align-items: center; gap: 32px; font-size: 19px; font-weight: 500; }
+.site-header nav a { display: inline-flex; min-height: 44px; align-items: center; gap: 17px; }
+.site-header nav a:hover, .text-link:hover, .footer-links a:hover { color: var(--blue); }
+.nav-divider { width: 1px; height: 20px; background: #9aabb9; }
+.hero-copy { position: relative; z-index: 1; text-align: center; padding-top: 7px; }
+.eyebrow { color: #1677ff; display: flex; align-items: center; justify-content: center; gap: 22px; font-size: 20px; letter-spacing: .24em; line-height: 1.6; }
+.eyebrow::before, .eyebrow::after { content: ''; display: block; width: 38px; height: 1px; background: #7baaf4; }
+h1 { margin: 15px 0 16px; font-size: 70px; line-height: 1.29; font-weight: 800; letter-spacing: 0; }
+.title-name { text-decoration: underline; text-decoration-color: #c5dffd; text-decoration-thickness: .16em; text-underline-offset: -.04em; text-decoration-skip-ink: none; }
+.blue-period { color: #065cf0; }
+.hero-description { color: var(--muted); font-size: 20px; line-height: 1.65; }
+.mobile-description { display: none; }
+.download-button { display: inline-flex; justify-content: center; align-items: center; gap: 20px; min-height: 64px; min-width: 326px; padding: 13px 34px; border-radius: 999px; background: #0865f4; color: #fff; font-size: 22px; font-weight: 650; box-shadow: 0 5px 12px #2d75c918, inset 0 2px 3px #ffffff30; transition: background .15s, transform .15s; }
+.hero-copy .download-button { margin-top: 18px; }
+.download-button:hover { background: #0056d7; transform: translateY(-2px); }
+.download-button:active { transform: translateY(0); }
+.download-button:focus-visible { outline-color: var(--ink); }
+.release-meta { color: #617a91; font-size: 16px; line-height: 1.6; margin-top: 7px; }
+.hero-features { position: absolute; bottom: 30px; left: 0; right: 0; display: flex; gap: 9px; justify-content: center; align-items: center; color: #60768b; font-size: 19px; }
+.hero-features::before, .hero-features::after { content: ''; width: 88px; height: 1px; margin: 0 21px; background: #b5c0c7; }
+.hero-features a { min-height: 44px; display: inline-flex; align-items: center; }
+.hero-features a:hover { color: var(--blue); }
+.section-wrap { max-width: 1196px; margin-inline: auto; }
+.how-section { padding-block: 106px 96px; display: grid; grid-template-columns: 1.03fr 1.15fr 250px; align-items: center; gap: 48px; }
+.section-label { font-size: 15px; letter-spacing: .13em; color: #367abb; margin-bottom: 15px; font-weight: 550; }
+h2 { font-size: 34px; line-height: 1.5; font-weight: 750; letter-spacing: -.025em; }
+.section-description { color: var(--muted); font-size: 17px; line-height: 1.9; margin-top: 18px; }
+.text-link { display: inline-flex; align-items: center; gap: 7px; color: var(--blue); font-size: 16px; min-height: 44px; }
+.how-intro .text-link { margin-top: 28px; }
+.steps { list-style: none; margin: 0; padding: 0; }
+.steps li { display: flex; align-items: baseline; gap: 18px; padding-block: 27px; border-bottom: 1px solid #dee5e9; scroll-margin-top: 50px; }
+.steps li:first-child { padding-top: 0; }
+.steps li:last-child { border-bottom: 0; padding-bottom: 0; }
+.step-number { color: #4583b8; font-size: 14px; font-weight: 550; letter-spacing: .05em; }
+.steps h3 { font-size: 20px; font-weight: 650; margin-bottom: 10px; }
+.steps p { font-size: 15px; line-height: 1.9; color: var(--muted); }
+.app-preview { width: 250px; }
+.app-preview img { width: 250px; height: auto; border-radius: 17px; }
+.app-preview figcaption { text-align: center; color: #64798b; font-size: 12px; margin-top: 14px; }
+.faq-section { padding-block: 80px 90px; border-top: 1px solid #dce4e8; display: grid; grid-template-columns: 1fr 1.5fr; gap: 90px; }
+.faq-list details { border-bottom: 1px solid #dce4e8; }
+.faq-list summary { cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; gap: 24px; font-size: 17px; font-weight: 550; padding-block: 23px; }
+.faq-list summary::-webkit-details-marker { display: none; }
+.faq-list summary svg { flex-shrink: 0; color: #6a8295; transition: transform .2s; }
+.faq-list details[open] summary svg { transform: rotate(180deg); }
+.faq-list details p { font-size: 15px; line-height: 1.9; color: var(--muted); padding-bottom: 24px; padding-right: 34px; }
+.download-section { text-align: center; padding: 76px 24px 82px; background: #eef4f8; }
+.download-section > img { margin: 0 auto 21px; }
+.download-section > p { color: var(--muted); font-size: 17px; margin-top: 12px; }
+.download-section .download-button { margin-top: 29px; }
+.download-section .download-details { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px; font-size: 14px; margin-top: 17px; }
+.download-section .text-link { font-size: 14px; margin-top: 9px; }
+.site-footer { padding-block: 43px 32px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 24px; align-items: center; }
+.footer-brand { font-weight: 700; font-size: 22px; }
+.site-footer p { font-size: 13px; color: var(--muted); margin-top: 7px; }
+.footer-links { display: flex; gap: 25px; color: var(--muted); font-size: 14px; }
+.footer-links a { display: inline-flex; align-items: center; gap: 4px; min-height: 44px; }
+.site-footer .footer-note { flex-basis: 100%; margin-top: 0; padding-top: 20px; border-top: 1px solid #e1e6e9; font-size: 12px; color: #657a8b; }
+@media (min-width: 1600px) { .hero-copy { padding-top: 30px; } h1 { font-size: 76px; } .hero-description { font-size: 22px; } }
+@media (max-width: 1439px) { .site-header, .section-wrap { margin-inline: 6%; } .hero-copy { padding-top: 0; } h1 { font-size: 60px; margin-top: 16px; } .hero-description { font-size: 18px; } .hero-copy .download-button { margin-top: 19px; } .how-section { gap: 32px; grid-template-columns: 1fr 1.2fr 220px; } .app-preview, .app-preview img { width: 220px; } h2 { font-size: 30px; } }
+@media (max-width: 1050px) { .brand-tagline { display: none; } .hero-shell { min-height: 950px; } .hero-scene { width: 1177px; max-width: none; left: 50%; transform: translateX(-50%); } .hero-description { font-size: 18px; } h1 { font-size: 58px; } .how-section { grid-template-columns: 1fr 1.3fr; gap: 42px; padding-block: 74px; } .app-preview { grid-column: 1 / -1; width: 240px; margin: 8px auto 0; } .app-preview img { width: 240px; } .faq-section { gap: 45px; } }
+@media (max-width: 640px) {
+  html { scroll-padding-top: 20px; }
+  .hero-shell { display: flex; flex-direction: column; height: auto; min-height: 0; max-height: none; }
+  .site-header { order: 0; width: auto; margin-inline: 22px; height: 82px; gap: 12px; }
+  .brand { gap: 10px; } .brand img { width: 36px; height: 36px; } .brand-name { font-size: 23px; }
+  .site-header nav { gap: 17px; font-size: 14px; } .nav-divider { display: none; } .site-header nav a { gap: 7px; } .github-link svg { width: 22px; height: 22px; } .github-link > span:not(.sr-only) { display: none; }
+  .hero-copy { order: 1; padding: 24px 20px 0; }
+  .eyebrow { font-size: 14px; gap: 14px; letter-spacing: .18em; } .eyebrow::before, .eyebrow::after { width: 24px; }
+  h1 { font-size: clamp(34px, 10.2vw, 48px); line-height: 1.35; margin: 20px 0 21px; letter-spacing: -.035em; }
+  .hero-description { font-size: 15px; line-height: 1.9; max-width: 340px; margin-inline: auto; }
+  .desktop-description { display: none; } .mobile-description { display: inline; }
+  .download-button { min-width: 275px; min-height: 58px; font-size: 18px; gap: 15px; padding: 12px 26px; }
+  .hero-copy .download-button { margin-top: 24px; }
+  .release-meta { font-size: 13px; margin-top: 10px; }
+  .hero-art { order: 2; position: relative; inset: auto; z-index: 0; height: 342px; margin-top: 2px; overflow: hidden; }
+  .hero-scene { width: 760px; height: auto; left: 50%; bottom: -15px; object-fit: contain; }
+  .hero-features { order: 3; position: relative; bottom: auto; gap: 7px; padding: 10px 10px 22px; font-size: 14px; }
+  .hero-features::before, .hero-features::after { width: 25px; margin: 0 5px; }
+  .section-wrap { margin-inline: 26px; }
+  .how-section { display: grid; grid-template-columns: 1fr; padding-block: 64px 56px; gap: 28px; }
+  .section-label { font-size: 13px; margin-bottom: 12px; } h2 { font-size: 28px; }
+  .section-description { font-size: 15px; margin-top: 14px; } .how-intro .text-link { margin-top: 14px; font-size: 15px; }
+  .steps { margin-top: 1px; } .steps li { padding-block: 24px; gap: 16px; } .steps li:first-child { padding-top: 8px; } .steps h3 { font-size: 18px; }
+  .app-preview { grid-column: auto; width: 240px; margin-top: 12px; } .app-preview img { width: 240px; }
+  .faq-section { grid-template-columns: 1fr; padding-block: 49px 58px; gap: 20px; }
+  .faq-list summary { font-size: 16px; padding-block: 21px; gap: 15px; } .faq-list details p { font-size: 14px; padding-right: 14px; }
+  .download-section { padding-block: 56px 61px; } .download-section h2 { font-size: 25px; } .download-section > p { font-size: 15px; } .download-section .download-details { font-size: 12px; gap: 6px; }
+  .site-footer { padding-block: 32px 25px; gap: 17px; } .footer-links { gap: 22px; font-size: 13px; } .site-footer .footer-note { line-height: 1.9; font-size: 11px; }
+}
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } *, *::before, *::after { transition: none !important; } }

@@ -1,0 +1,9 @@
+{
+  "status": 200,
+  "host": "release-assets.githubusercontent.com",
+  "sizeBytes": 19318249,
+  "sha256": "b33c916dd5770238fd9cac11396044f70c64e31e4f8a5ca7618361689f7b2a28",
+  "seconds": 3.52,
+  "contentType": "application/vnd.android.package-archive",
+  "contentDisposition": "attachment; filename=pickup-assistant-0.5.20.apk"
+}
