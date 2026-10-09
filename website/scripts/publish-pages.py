@@ -96,6 +96,10 @@ def publish():
     if not (PROJECT / 'dist/client/index.html').exists():
         raise RuntimeError('Build the website before publishing')
     head, pages = check()
+    previous = json.loads(AUDIT.read_text(encoding='utf-8')) if AUDIT.exists() else None
+    if previous and previous.get('sourceCommit') != head:
+        raise RuntimeError('Remote branch changed since website publication; inspect before updating')
+    dispatch_needed = pages is None
     old_tree = api('git/commits/' + head)['tree']['sha']
     old_files = {f['path']: f['sha'] for f in api('git/trees/' + old_tree + '?recursive=1')['tree'] if f['type'] == 'blob'}
     changed = []
@@ -123,8 +127,10 @@ def publish():
         pages = api('pages', 'POST', {'build_type': 'workflow'})
     elif pages.get('build_type') != 'workflow':
         raise RuntimeError('Existing Pages publishing source differs; inspect before changing it')
-    # Explicit dispatch also works for an unchanged website after Pages enablement.
-    api('actions/workflows/deploy-pages.yml/dispatches', 'POST', {'ref': 'main'})
+    # Changed source triggers push automatically. Dispatch explicitly only for
+    # initial Pages enablement or an unchanged source rebuild.
+    if dispatch_needed or not changed:
+        api('actions/workflows/deploy-pages.yml/dispatches', 'POST', {'ref': 'main'})
     record = {'success': False, 'phase': 'deployment_dispatched',
               'timestamp': datetime.datetime.now(datetime.timezone.utc).isoformat(),
               'repository': REPO, 'previousHead': head, 'sourceCommit': published,
@@ -132,6 +138,9 @@ def publish():
               'changedFiles': [entry['path'] for entry in changed], 'sha256': hashes,
               'appStableManifestUnchanged': old_files.get('update.json') == api('contents/update.json?ref=' + published)['sha'],
               'appBetaManifestUnchanged': old_files.get('update-beta.json') == api('contents/update-beta.json?ref=' + published)['sha']}
+    if previous:
+        record['history'] = previous.get('history', []) + [
+            {k: previous.get(k) for k in ('timestamp', 'sourceCommit', 'phase', 'success')}]
     AUDIT.write_text(json.dumps(record, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
     print(json.dumps({k: v for k, v in record.items() if k != 'sha256'}, ensure_ascii=False))
 

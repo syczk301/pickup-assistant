@@ -38,6 +38,10 @@ Full-view and focused comparison: `qa/comparison-final.jpg`. The board contains 
 
 No unresolved P0/P1/P2 visual or functional findings. P3: generated underline texture and small raster letterforms can be refined if a future brand asset replaces the scene. User phone network and Android installation are outside this website verification.
 
+## Iteration 3 — contrast refinement, passed
+
+Numeric contrast checking found [P2] smaller semantic text colors at ratios 3.94–4.40: overline, section labels, step numbers, version line, screenshot caption and footer license. Darkened these blue/slate tokens without changing layout. Ratios after correction against warm-white: primary blue 5.00, muted slate 5.08, section blue 4.78, step blue 5.16. Recaptured desktop/mobile and repeated the combined full/focused comparison in `qa/comparison-final.jpg`; composition, type hierarchy and spacing preserved. No remaining actionable P0/P1/P2 findings.
+
 ## Implementation checklist
 
 - [x] Recapture after asset/layout fixes and compare full and focused regions.
