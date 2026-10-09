@@ -120,9 +120,10 @@ class ImageRecognizer(context: Context) {
         }
     }
 
-    /** Read only labelled code lines again with the Latin model; never change arbitrary numbers. */
+    /** Re-read labelled codes and noisy shelf-code rows, excluding unrelated numbers. */
     private fun refineCodes(api: TessBaseAPI, bitmap: Bitmap, raw: String, data: File): String {
         val lines = mutableListOf<Pair<String, Rect>>()
+        val words = mutableListOf<Pair<String, Rect>>()
         val iterator = api.resultIterator ?: return raw
         try {
             iterator.begin()
@@ -130,7 +131,15 @@ class ImageRecognizer(context: Context) {
                 val text = iterator.getUTF8Text(2)?.trim().orEmpty()
                 if (text.isNotBlank()) lines.add(text to iterator.getBoundingRect(2))
             } while (lines.size < 200 && iterator.next(2))
+            iterator.begin()
+            do {
+                val text = iterator.getUTF8Text(3)?.trim().orEmpty()
+                if (text.any(Char::isDigit) && text.matches(Regex("[A-Za-z0-9-]+")))
+                    words.add(text to iterator.getBoundingRect(3))
+            } while (words.size < 800 && iterator.next(3))
         } finally { iterator.delete() }
+        data class Candidate(val text: String, val rect: Rect, val shelf: Boolean = false)
+        val shelfCode = Regex("[A-Za-z0-9]{1,3}-[A-Za-z0-9]{1,3}-[A-Za-z0-9]{3,6}")
         var previousLabel = false
         val candidates = lines.filter { (text, _) ->
             val compact = text.replace(Regex("\\s+"), "")
@@ -138,14 +147,27 @@ class ImageRecognizer(context: Context) {
                 compact.any { it.isDigit() } && compact.matches(Regex("[A-Za-z0-9\\-/_]+"))
             previousLabel = Regex("取件码|取货码|提货码|提取码|开柜码").containsMatchIn(compact)
             candidate
-        }.take(12)
+        }.map { Candidate(it.first, it.second) }.toMutableList()
+        for ((text, line) in lines) {
+            val compact = text.replace(Regex("\\s+"), "")
+            if (shelfCode.matches(compact) || text.count { it == '-' } < 2 || text.count(Char::isDigit) < 5 ||
+                Regex("取件码|取货码|提货码|提取码|开柜码|订单|运单|物流单号|手机|电话").containsMatchIn(compact)) continue
+            val parts = words.filter { (_, rect) ->
+                rect.left >= line.left && rect.right <= line.right && rect.bottom in line.top..line.bottom && rect.height() > 2
+            }.map { it.second }
+            val anchor = parts.minByOrNull { it.height() } ?: continue
+            // Sparse OCR may merge a station caption or logo into the code row. Use the
+            // numeric words' horizontal extent and the clearest word's text baseline.
+            candidates.add(Candidate(text, Rect(parts.minOf { it.left }, maxOf(line.top, anchor.top),
+                parts.maxOf { it.right }, minOf(line.bottom, anchor.bottom)), true))
+        }
         if (candidates.isEmpty() || closed) return raw
         if (!api.init(data.path, "eng", TessBaseAPI.OEM_LSTM_ONLY)) return raw
         api.setVariable(TessBaseAPI.VAR_CHAR_WHITELIST, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-")
         api.setVariable("user_defined_dpi", "300")
         api.pageSegMode = TessBaseAPI.PageSegMode.PSM_SINGLE_LINE
         var result = raw
-        for ((original, rect) in candidates) {
+        for ((original, rect, shelf) in candidates.take(24)) {
             if (closed) break
             val left = (rect.left - 12).coerceAtLeast(0); val top = (rect.top - 12).coerceAtLeast(0)
             val right = (rect.right + 12).coerceAtMost(bitmap.width); val bottom = (rect.bottom + 12).coerceAtMost(bitmap.height)
@@ -154,7 +176,9 @@ class ImageRecognizer(context: Context) {
             try {
                 api.setImage(crop)
                 val code = api.getUTF8Text().orEmpty().replace(Regex("\\s+"), "")
-                if (SmsParser.valid(code) && code.length == original.replace(Regex("\\s+"), "").length) result = result.replace(original, code)
+                val usable = if (shelf) shelfCode.matches(code)
+                    else SmsParser.valid(code) && code.length == original.replace(Regex("\\s+"), "").length
+                if (usable) result = result.replace(original, code)
             } finally { if (crop !== bitmap) crop.recycle() }
         }
         return result

@@ -54,5 +54,11 @@ fun main() {
     expect(scan("取件码：123456\n\n物流公司：京东物流\n\n地址：北门驿站").parcels.single().station == "北门驿站", "single code retains separately recognised station")
     expect(scan("取件码：123456\n收货地址\n岛号码保护\n收货地址：南京市").confidence == 0, "excluded map labels do not inflate OCR pass confidence")
     expect(scan("取件码：123456\n中通快递：12345678901234\n地址：北门驿站").confidence > scan("取件码：123456\n圆通速递\n地址：北门驿站").confidence, "OCR result with tracking evidence wins selection")
+    val mixed = scan("中通快递\n3-1-1294\n地址：北门驿站\n\n圆通速递\n取件码：4-4-4216\n地址：南门驿站\n\n7-5-3320")
+    expect(mixed.parcels.map { it.code } == listOf("3-1-1294", "4-4-4216", "7-5-3320"), "mixed labelled and bare codes retain screenshot order")
+    expect(mixed.parcels[0].carrier == "中通快递" && mixed.parcels[1].carrier == "圆通速递", "mixed cards keep their own company")
+    expect(scan("取件码：3-1-1294、4-4-4216，7-5-3320").parcels.map { it.code } == listOf("3-1-1294", "4-4-4216", "7-5-3320"), "multiple codes under one label")
+    expect(scan("取件码：a7b29\n取件码：A7B29").parcels.size == 1, "case insensitive duplicate code")
+    expect(scan("取件码：3-1-1294\n2026-10-09\n12345678901234\n13812345678").parcels.size == 1, "other screenshot numbers excluded from batch")
     println("PASS: $checks image parcel parsing checks")
 }

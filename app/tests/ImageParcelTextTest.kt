@@ -27,5 +27,7 @@ fun main() {
     expect(!partial.contains("取件码") && partial.contains("京东物流") && partial.contains("南门驿站"), "partial fields survive without invented code")
     expect(ImageParcelText.split("图片识别", "").original.isEmpty(), "empty legacy image source")
     expect(ImageParcelText.split("图片识别", ImageParcelText.join("手动核对", "")) == ImageParcelText.Parts("手动核对", ""), "note without OCR text stays editable")
+    val mixed = "中通快递\n3-1-1294\n地址：北门驿站\n\n圆通速递\n取件码：4-4-4216\n地址：南门驿站"
+    expect(ImageParcelParser.parse(ImageParcelText.preview(mixed)).parcels == ImageParcelParser.parse(mixed).parcels, "mixed screenshot preview keeps every parcel")
     println("PASS: $checks image result, note and original-evidence checks")
 }

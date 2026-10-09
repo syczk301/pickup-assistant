@@ -2,11 +2,11 @@
   "schemaVersion": 1,
   "packageName": "com.local.pickup",
   "channel": "beta",
-  "versionCode": 36,
-  "versionName": "0.5.19",
+  "versionCode": 37,
+  "versionName": "0.5.20",
   "minSdk": 26,
-  "apkUrl": "https://github.com/syczk301/pickup-assistant/releases/download/v0.5.19-beta.1/pickup-assistant-0.5.19.apk",
-  "sizeBytes": 19305961,
-  "sha256": "4dbe78570314a3205ea58d118ec05c176123fa812fe57fcf177cb6652e41bc29",
-  "releaseNotes": "拾件簿 0.5.19 Beta 1\n\n去掉 4×2 清单和 4×4 大号清单小组件左下角的待取／剩余数量提示，底部“查看全部”靠右显示。\n\nAndroid 16 隔离模拟器使用生产 APK 的 RemoteViews 检查四种默认尺寸、普通字体和 2 倍字体下的空清单、1 件及 13 件记录；0.5.18 覆盖升级保留完整记录。尚未在用户手机桌面上验证。\n\n旧版应用内更新有问题时，请用手机浏览器下载本 APK 后直接覆盖安装，无需卸载。"
+  "apkUrl": "https://github.com/syczk301/pickup-assistant/releases/download/v0.5.20-beta.1/pickup-assistant-0.5.20.apk",
+  "sizeBytes": 19318249,
+  "sha256": "b33c916dd5770238fd9cac11396044f70c64e31e4f8a5ca7618361689f7b2a28",
+  "releaseNotes": "拾件簿 0.5.20 Beta 1\n\n- 修复一张截图识别到多个取件码时，点击保存只添加当前一条的问题；现在可点击“全部添加（数量）”一次加入。\n- 支持切换逐条核对，分别修改取件码、快递公司、驿站和备注；切换及页面重建保留各条修改。\n- 保存前校验全部取件码，无效码定位到对应条目；已有的待取记录自动跳过，避免重复导入。\n- 补全混合有标签和无标签的多码识别，改善图标噪声影响取件码行识别的问题。\n- 修复窄屏大字体下底部操作按钮被裁切的问题，键盘弹出时仍可操作。\n\n已通过 Android 16 隔离模拟器的 185 项检查，使用含 3 个码的实际截图验证完整识别和一次添加；普通字体、深色模式、2 倍字体、页面重建和覆盖升级检查通过，现有 144 项计数回归检查及 JSON 迁移检查通过。\n\n使用原包名和签名，直接覆盖安装保留取件记录，无需卸载。应用内选择“测试版”更新渠道后可检查此版本。"
 }

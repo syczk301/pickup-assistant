@@ -755,34 +755,61 @@ class MainActivity : Activity() {
         val station = entry("驿站名称 / 地址")
         val note = entry("备注（选填）")
         var parsed = emptyList<SmsParser.Result>()
-        fun fill(r: SmsParser.Result) {
+        var drafts = mutableListOf<Store.Parcel>()
+        var selected = 0
+        fun remember() {
+            drafts.getOrNull(selected)?.apply {
+                this.code = code.text.toString().trim()
+                this.carrier = carrier.selectedItem.toString()
+                this.station = station.text.toString().trim()
+                this.note = note.text.toString().trim()
+            }
+        }
+        fun fill(r: Store.Parcel) {
             code.setText(r.code)
             carrier.setSelection(SmsParser.CARRIERS.indexOf(r.carrier).takeIf { it >= 0 } ?: SmsParser.CARRIERS.lastIndex)
             station.setText(r.station)
+            note.setText(r.note)
         }
         lateinit var dialog: AlertDialog
-        val allButton = action("按短信原文添加全部") {
-            if (parsed.size < 2) return@action
-            val count = if (!fromImage) Store.ingest(this, sms.text.toString(), System.currentTimeMillis()) else synchronized(Store) {
-                val records = Store.load(this)
-                var added = 0
-                for (candidate in parsed) {
-                    if (records.none { it.completed == 0L && it.code.equals(candidate.code, true) && it.carrier == candidate.carrier }) {
-                        records.add(Store.make(candidate.code, candidate.carrier, candidate.station, ImageParcelText.join(note.text.toString(), imageOriginal), "图片识别")); added++
-                    }
-                }
-                if (added > 0) Store.save(this, records)
-                added
+        val reviewButton = action("切换核对取件码") {}.apply { visibility = View.GONE }
+        layout.addView(reviewButton, layout.indexOfChild(result) + 1,
+            LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(8) })
+        fun refreshReview() {
+            reviewButton.visibility = if (drafts.size > 1) View.VISIBLE else View.GONE
+            reviewButton.text = "切换核对 · 第 ${selected + 1}/${drafts.size} 个"
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.let { save ->
+                val fullLabel = if (drafts.size > 1) "全部添加（${drafts.size}）" else "保存"
+                val cancel = dialog.getButton(AlertDialog.BUTTON_NEGATIVE)
+                fun width(button: TextView, label: String) = maxOf(button.minWidth.toFloat(),
+                    button.paint.measureText(label) + button.paddingLeft + button.paddingRight)
+                val available = minOf(resources.displayMetrics.widthPixels - dp(32), dp(520)) - dp(48)
+                // Keep both actions in one row at large font sizes; the count remains explicit.
+                val compact = if (drafts.size > 1) "添加${drafts.size}" else fullLabel
+                save.text = if (cancel != null && width(save, fullLabel) + width(cancel, cancel.text.toString()) + dp(12) > available)
+                    compact else fullLabel
             }
-            dialog.dismiss(); render()
-            toast(if (count > 0) "已添加 $count 个取件码" else "记录已存在，无需重复添加")
-        }.apply { visibility = View.GONE }
-        layout.addView(allButton, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })
+        }
+        fun chooseDraft(index: Int) {
+            selected = index
+            fill(drafts[index])
+            code.error = null
+            refreshReview()
+        }
         watch(sms) { value ->
+            remember()
+            val oldParsed = parsed
+            val oldDrafts = drafts
+            val current = oldParsed.getOrNull(selected)
             originalButton.visibility = if (fromImage && imageOriginal.isNotBlank()) View.VISIBLE else View.GONE
             val image = if (fromImage) ImageParcelParser.parse(value) else null
             parsed = image?.parcels ?: SmsParser.parse(value)
-            if (parsed.isNotEmpty()) fill(parsed.first())
+            drafts = parsed.map { candidate ->
+                oldDrafts.getOrNull(oldParsed.indexOf(candidate)) ?: Store.Parcel(
+                    code = candidate.code, carrier = candidate.carrier, station = candidate.station)
+            }.toMutableList()
+            selected = parsed.indexOf(current).coerceAtLeast(0)
+            if (drafts.isNotEmpty()) fill(drafts[selected])
             else if (image != null) {
                 if (image.station.isNotBlank()) station.setText(image.station)
                 if (image.carrier != "其他") carrier.setSelection(SmsParser.CARRIERS.indexOf(image.carrier))
@@ -791,46 +818,59 @@ class MainActivity : Activity() {
                 value.isBlank() -> "也可以直接填写下方取件信息"
                 parsed.isEmpty() -> "未识别到取件码，可在下方手动填写"
                 parsed.size == 1 -> "已识别取件信息，可修改后保存"
-                else -> "识别到 ${parsed.size} 个取件码，点击切换查看；也可按原文添加全部"
+                else -> "识别到 ${parsed.size} 个取件码，可逐条核对后一次添加"
             }
             result.setTextColor(if (parsed.isEmpty()) muted else accent)
-            allButton.visibility = if (parsed.size > 1) View.VISIBLE else View.GONE
-            allButton.text = "按${if (fromImage) "图片识别结果" else "短信原文"}添加全部 ${parsed.size} 个"
+            refreshReview()
         }
-        result.setOnClickListener {
-            if (parsed.size > 1) AppDialogs.Builder(this).setTitle("选择要填写的取件码")
-                .setItems(parsed.map { "${it.code} · ${it.carrier}" }.toTypedArray()) { _, index -> fill(parsed[index]) }.show()
+        reviewButton.setOnClickListener {
+            remember()
+            if (drafts.size > 1) AppDialogs.Builder(this).setTitle("逐条核对取件信息")
+                .setItems(drafts.map { "${it.code} · ${it.carrier}" }.toTypedArray()) { _, index -> chooseDraft(index) }.show()
         }
         dialog = AppDialogs.Builder(this).setTitle("添加包裹")
             .setView(ScrollView(this).apply { addView(layout) })
             .setNegativeButton("取消", null).setPositiveButton("保存", null).create()
         dialog.setOnShowListener {
             dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE or WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN)
+            refreshReview()
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener save@{
-                val value = code.text.toString().trim()
-                if (!SmsParser.valid(value)) { code.error = "请输入 3–12 位字母、数字或短横线，不能是手机号"; return@save }
-                synchronized(Store) {
-                    val records = Store.load(this)
-                    val company = carrier.selectedItem.toString()
-                    if (records.any { it.completed == 0L && it.code.equals(value, true) && it.carrier == company }) {
-                        code.error = "已有相同的待取记录"; return@save
+                remember()
+                val reviewed = if (drafts.size > 1) drafts else listOf(Store.Parcel(
+                    code = code.text.toString().trim(), carrier = carrier.selectedItem.toString(),
+                    station = station.text.toString().trim(), note = note.text.toString().trim()))
+                val invalid = reviewed.indexOfFirst { !SmsParser.valid(it.code) }
+                if (invalid >= 0) {
+                    if (drafts.size > 1) {
+                        chooseDraft(invalid)
+                        result.text = "第 ${invalid + 1} 个取件码无效，请核对后再全部添加"
                     }
-                    val parcel = Store.make(value, company, station.text.toString().trim(), note.text.toString().trim(), if (fromImage) "图片识别" else if (sms.text.isBlank()) "手动添加" else "短信识别")
-                    if (sms.text.isNotBlank()) {
-                        if (fromImage) parcel.note = ImageParcelText.join(note.text.toString(), imageOriginal)
-                        else parcel.source = sms.text.toString()
-                    }
-                    records.add(parcel); Store.save(this, records)
+                    code.error = "请输入 3–12 位字母、数字或短横线，不能是手机号"
+                    return@save
                 }
-                dialog.dismiss(); render(); toast("已保存")
+                val candidates = reviewed.map { draft -> Store.make(draft.code, draft.carrier, draft.station,
+                    if (fromImage) ImageParcelText.join(draft.note, imageOriginal) else draft.note,
+                    if (fromImage) "图片识别" else if (sms.text.isBlank()) "手动添加" else sms.text.toString()) }
+                val count = Store.addReviewed(this, candidates)
+                if (count == 0 && candidates.size == 1) { code.error = "已有相同的待取记录"; return@save }
+                val skipped = candidates.size - count
+                dialog.dismiss(); render()
+                toast(when {
+                    skipped > 0 -> "已添加 $count 个，跳过 $skipped 个重复记录"
+                    count > 1 -> "已添加 $count 个取件码"
+                    else -> "已保存"
+                })
             }
         }
         addSnapshot = {
+            remember()
             Bundle().apply {
                 putString("sms", sms.text.toString()); putString("code", code.text.toString())
                 putString("station", station.text.toString()); putString("note", note.text.toString())
                 putInt("carrier", carrier.selectedItemPosition); putBoolean("fromImage", fromImage)
                 putString("imageOriginal", imageOriginal)
+                putString("reviewedDrafts", JSONArray().apply { drafts.forEach { put(it.json()) } }.toString())
+                putInt("selectedDraft", selected)
             }
         }
         fun releaseImage(uri: Uri?) {
@@ -839,7 +879,7 @@ class MainActivity : Activity() {
         imageResult = { uri ->
             pendingImage = uri
             result.text = "正在本机识别图片…"
-            val editable = listOf<View>(sms, code, carrier, station, note, pasteButton, imageButton, allButton)
+            val editable = listOf<View>(sms, code, carrier, station, note, pasteButton, imageButton, reviewButton)
             editable.forEach { it.isEnabled = false }
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = false
             val recognizer = imageRecognizer ?: ImageRecognizer(this).also { imageRecognizer = it }
@@ -865,6 +905,15 @@ class MainActivity : Activity() {
             sms.setText(if (fromImage && !it.containsKey("imageOriginal")) ImageParcelText.preview(imageOriginal) else it.getString("sms", "")); code.setText(it.getString("code", ""))
             station.setText(it.getString("station", "")); note.setText(it.getString("note", ""))
             carrier.setSelection(it.getInt("carrier", SmsParser.CARRIERS.lastIndex).coerceIn(0, SmsParser.CARRIERS.lastIndex))
+            val savedDrafts = try { JSONArray(it.getString("reviewedDrafts", "[]")) } catch (_: JSONException) { JSONArray() }
+            if (savedDrafts.length() == drafts.size && drafts.isNotEmpty()) {
+                drafts = MutableList(savedDrafts.length()) { index ->
+                    val saved = savedDrafts.optJSONObject(index) ?: JSONObject()
+                    Store.Parcel(code = saved.optString("code"), carrier = saved.optString("carrier", "其他"),
+                        station = saved.optString("station"), note = saved.optString("note"))
+                }
+                chooseDraft(it.getInt("selectedDraft", 0).coerceIn(0, drafts.lastIndex))
+            } else remember()
         }
         pendingImage?.let { uri -> handler.post { if (dialog.isShowing) imageResult?.invoke(uri) } }
     }

@@ -85,6 +85,22 @@ object Store {
             System.currentTimeMillis(),
         )
 
+    /** Validate the whole reviewed batch before writing; skip pending duplicates. */
+    @Synchronized
+    fun addReviewed(c: Context, candidates: List<Parcel>): Int {
+        require(candidates.all { SmsParser.valid(it.code) }) { "请核对所有取件码后再保存" }
+        val parcels = load(c)
+        var added = 0
+        for (candidate in candidates) {
+            if (parcels.none { it.completed == 0L && it.code.equals(candidate.code, true) && it.carrier == candidate.carrier }) {
+                parcels.add(candidate)
+                added++
+            }
+        }
+        if (added > 0) save(c, parcels)
+        return added
+    }
+
     @Synchronized
     fun ingest(c: Context, text: String, time: Long): Int {
         val parcels = load(c)

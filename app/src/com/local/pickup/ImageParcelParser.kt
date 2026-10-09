@@ -33,22 +33,30 @@ object ImageParcelParser {
     }
 
     private fun codes(text: String): List<String> {
-        val found = linkedSetOf<String>()
+        val found = mutableListOf<Pair<Int, String>>()
+        val codeStart = Regex("^[A-Za-z0-9][A-Za-z0-9-]{2,11}(?=$|[\\p{IsHan}(,，、;；\\s])")
         label.findAll(text).forEach { match ->
             val tail = text.substring(match.range.last + 1).lineSequence().firstOrNull().orEmpty()
-            val candidate = tail.trim().substringBefore('，').substringBefore(',').substringBefore('。')
-                .replace(Regex("[ \\t]+"), "")
-            Regex("^[A-Za-z0-9][A-Za-z0-9-]{2,11}(?=$|[\\p{IsHan}(])").find(candidate)?.value
-                ?.takeIf(SmsParser::valid)?.let(found::add)
+            var candidate = tail.trim().substringBefore('。').replace(Regex("[ \\t]+"), "")
+            var offset = match.range.last + 1
+            while (true) {
+                val code = codeStart.find(candidate)?.value ?: break
+                if (SmsParser.valid(code)) found.add(offset to code)
+                val rest = candidate.substring(code.length)
+                val separator = Regex("^[ \\t]*[,，、;；][ \\t]*").find(rest) ?: break
+                offset += code.length + separator.value.length
+                candidate = rest.substring(separator.value.length)
+            }
         }
-        if (!label.containsMatchIn(text)) {
-            text.lineSequence().map { it.trim() }.filter {
-                it.matches(Regex("[A-Za-z0-9]{1,3}-[A-Za-z0-9]{1,3}-[A-Za-z0-9]{3,6}"))
-            }.filter(SmsParser::valid).forEach(found::add)
-        }
+        // A list screenshot can mix labelled codes with bare shelf-code rows.
+        Regex("(?m)^[ \\t]*([A-Za-z0-9]{1,3}-[A-Za-z0-9]{1,3}-[A-Za-z0-9]{3,6})[ \\t]*$")
+            .findAll(text).forEach { match ->
+                val code = match.groupValues[1]
+                if (SmsParser.valid(code)) found.add(match.range.first to code)
+            }
         // Explicit SMS patterns embedded in a screenshot remain supported; no naked number guessing.
-        if (found.isEmpty() && !label.containsMatchIn(text)) SmsParser.parse(text).forEach { found.add(it.code) }
-        return found.toList()
+        if (found.isEmpty() && !label.containsMatchIn(text)) SmsParser.parse(text).forEach { found.add(text.indexOf(it.code) to it.code) }
+        return found.sortedBy { it.first }.map { it.second }.distinctBy { it.uppercase(java.util.Locale.ROOT) }
     }
 
     private fun carrier(text: String): Evidence {
