@@ -1192,6 +1192,17 @@ class MainActivity : Activity() {
         about.addView(text("拾件簿 ${updates.version()}", 18, ink, true))
         space(about, 8)
         about.addView(text("短信识别、取件管理与本地备份。短信和取件记录在本机处理，不上传。", 13, muted))
+        space(about, 8)
+        settingRow(about, "GitHub 项目主页", "查看源码、版本发布和问题反馈 ↗") {
+            try {
+                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/syczk301/pickup-assistant"))
+                    .addCategory(Intent.CATEGORY_BROWSABLE))
+            } catch (_: ActivityNotFoundException) {
+                toast("没有可打开链接的应用，请先安装浏览器")
+            } catch (_: SecurityException) {
+                toast("系统限制了打开链接，请检查浏览器设置")
+            }
+        }
     }
 
     private fun requestSmsPermission() {

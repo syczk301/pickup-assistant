@@ -2,11 +2,11 @@
   "schemaVersion": 1,
   "packageName": "com.local.pickup",
   "channel": "beta",
-  "versionCode": 38,
-  "versionName": "0.5.21",
+  "versionCode": 39,
+  "versionName": "0.5.22",
   "minSdk": 26,
-  "apkUrl": "https://github.com/syczk301/pickup-assistant/releases/download/v0.5.21-beta.1/pickup-assistant-0.5.21.apk",
+  "apkUrl": "https://github.com/syczk301/pickup-assistant/releases/download/v0.5.22-beta.1/pickup-assistant-0.5.22.apk",
   "sizeBytes": 19322503,
-  "sha256": "944fe578238681dd0c0fa17b4c8e27121fd8a68ab5c1f115502280b86f8bdef1",
-  "releaseNotes": "拾件簿 0.5.21 Beta 1\n\n- 新增“双码横条 · 4×1”，左右并排显示最新两个待取件码，保留原单码横条。\n- 只有一件待取时自动展开为单栏；没有待取件时显示完成提示。\n- 空间足够时显示各自驿站；窄尺寸或大字体下优先完整显示取件码。\n- 拉高后沿用清单布局，待取记录变化时与其他小组件一起刷新。\n- 修复 Android 8 上长取件码因字宽取整而被截断的问题。\n\n已通过 Android 8 隔离模拟器的 434 项原生检查，覆盖 36 组尺寸、字体和待取数量组合；现有 144 项回归检查及 JSON 迁移检查通过。Android 12+ 响应式尺寸分支与真机桌面尚待验证：现代安卓镜像的验证因模拟器图形进程故障未完成。\n\n使用原包名和签名，可直接覆盖安装，无需卸载。安装后在桌面小组件列表中选择“双码横条 · 4×1”。应用内切换到测试版更新渠道后可检查此版本；正式渠道保持 0.5.20。"
+  "sha256": "b243c751971507fea72081d5d85150708d27c5682a75894458010e8d43249c7f",
+  "releaseNotes": "拾件簿 0.5.22 Beta 1\n\n- 在“设置 → 关于拾件簿”中新增“GitHub 项目主页”入口，可查看源码、版本发布和问题反馈。\n- 点击后由系统使用浏览器或已注册的 GitHub 客户端打开项目仓库。\n- 没有可用应用或系统限制打开链接时，显示明确提示。\n- 保留 0.5.21 的“双码横条 · 4×1”。\n\n构建、原发布签名、包名、版本号与仓库链接检查通过；本次 GitHub 入口尚未进行运行时界面验证。双码横条沿用 0.5.21 的实现与已记录的验证范围。\n\n使用原包名和签名，可直接覆盖安装，无需卸载。在设置中切换到测试版更新渠道后可检查此版本。正式渠道保持 0.5.20。"
 }
