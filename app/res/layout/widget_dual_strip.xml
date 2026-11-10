@@ -1,0 +1,11 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/widget_root" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="horizontal" android:gravity="center_vertical" android:paddingLeft="12dp" android:paddingRight="12dp" android:paddingTop="8dp" android:paddingBottom="8dp" android:background="@drawable/widget_background">
+    <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:orientation="vertical" android:gravity="center_vertical">
+        <TextView android:id="@+id/widget_code1" android:layout_width="match_parent" android:layout_height="wrap_content" android:includeFontPadding="false" android:singleLine="true" android:ellipsize="end" android:textSize="20sp" android:textColor="#08263C" android:text="45-3-2326" android:textStyle="bold"/>
+        <TextView android:id="@+id/widget_meta1" android:layout_width="match_parent" android:layout_height="wrap_content" android:includeFontPadding="false" android:singleLine="true" android:ellipsize="end" android:textSize="10sp" android:textColor="#657789" android:text="南林大学生活动中心" android:layout_marginTop="2dp"/>
+    </LinearLayout>
+    <LinearLayout android:id="@+id/widget_dual_divider" android:layout_width="1dp" android:layout_height="match_parent" android:layout_marginStart="8dp" android:layout_marginEnd="8dp" android:background="#EAF0F5"/>
+    <LinearLayout android:id="@+id/widget_dual_second" android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:orientation="vertical" android:gravity="center_vertical">
+        <TextView android:id="@+id/widget_code2" android:layout_width="match_parent" android:layout_height="wrap_content" android:includeFontPadding="false" android:singleLine="true" android:ellipsize="end" android:textSize="20sp" android:textColor="#08263C" android:text="35-6-6603" android:textStyle="bold"/>
+        <TextView android:id="@+id/widget_meta2" android:layout_width="match_parent" android:layout_height="wrap_content" android:includeFontPadding="false" android:singleLine="true" android:ellipsize="end" android:textSize="10sp" android:textColor="#657789" android:text="林业大学快递服务点" android:layout_marginTop="2dp"/>
+    </LinearLayout>
+</LinearLayout>

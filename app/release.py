@@ -136,7 +136,7 @@ def publish_beta(tag):
     for path in ROOT.rglob("*"):
         if not path.is_file(): continue
         rel = path.relative_to(ROOT)
-        if rel.parts[0] in ("build", ".gradle", "__pycache__") or "__pycache__" in rel.parts or path.suffix in (".jks", ".keystore", ".apk", ".idsig", ".pyc", ".java"): continue
+        if rel.parts[0] in ("build", ".gradle", "__pycache__", "widget-tests") or "__pycache__" in rel.parts or path.suffix in (".jks", ".keystore", ".apk", ".idsig", ".pyc", ".java"): continue
         if path.suffix == ".md" and rel.as_posix() != "README.md": continue
         name = rel.as_posix() if rel.as_posix() in ("README.md", "LICENSE", ".gitignore") else "app/" + rel.as_posix()
         files[name] = path.read_bytes()

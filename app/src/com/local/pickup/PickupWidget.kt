@@ -22,6 +22,7 @@ import kotlin.math.floor
 
 open class PickupWidget : AppWidgetProvider() {
     protected open val defaultSize: SizeF get() = SizeF(280f, 160f)
+    protected open val dualStrip: Boolean get() = false
 
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action == Intent.ACTION_MY_PACKAGE_REPLACED) refresh(context)
@@ -29,21 +30,22 @@ open class PickupWidget : AppWidgetProvider() {
     }
 
     override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) {
-        for (id in ids) manager.updateAppWidget(id, views(context, manager.getAppWidgetOptions(id), defaultSize))
+        for (id in ids) manager.updateAppWidget(id, views(context, manager.getAppWidgetOptions(id), defaultSize, dualStrip))
     }
 
     override fun onAppWidgetOptionsChanged(context: Context, manager: AppWidgetManager, id: Int, options: Bundle) {
-        manager.updateAppWidget(id, views(context, options, defaultSize))
+        manager.updateAppWidget(id, views(context, options, defaultSize, dualStrip))
     }
 
     companion object {
         private val providers = arrayOf(
             PickupWidget::class.java, PickupSmallWidget::class.java,
             PickupStripWidget::class.java, PickupLargeWidget::class.java,
+            PickupDualStripWidget::class.java,
         )
 
         // Keep the original receiver so widgets already on the home screen survive updates.
-        fun views(context: Context, options: Bundle, fallback: SizeF = SizeF(280f, 160f)): RemoteViews {
+        fun views(context: Context, options: Bundle, fallback: SizeF = SizeF(280f, 160f), dualStrip: Boolean = false): RemoteViews {
             val pending = Store.load(context).filter { it.completed == 0L }.sortedByDescending { it.created }
             if (Build.VERSION.SDK_INT >= 31) {
                 @Suppress("DEPRECATION")
@@ -51,7 +53,7 @@ open class PickupWidget : AppWidgetProvider() {
                     ?.filter { it.width.isFinite() && it.height.isFinite() && it.width > 0 && it.height > 0 }
                     ?.distinct()?.take(16)
                 if (!sizes.isNullOrEmpty()) {
-                    return RemoteViews(sizes.associateWith { render(context, it, pending) })
+                    return RemoteViews(sizes.associateWith { render(context, it, pending, dualStrip) })
                 }
             }
             // Older launchers supply portrait width and landscape height as their minimums.
@@ -60,11 +62,12 @@ open class PickupWidget : AppWidgetProvider() {
             val heightKey = if (landscape) AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT else AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT
             val width = options.getInt(widthKey, options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, fallback.width.toInt()))
             val height = options.getInt(heightKey, options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, fallback.height.toInt()))
-            return render(context, SizeF(width.coerceAtLeast(1).toFloat(), height.coerceAtLeast(1).toFloat()), pending)
+            return render(context, SizeF(width.coerceAtLeast(1).toFloat(), height.coerceAtLeast(1).toFloat()), pending, dualStrip)
         }
 
-        private fun render(context: Context, size: SizeF, pending: List<Store.Parcel>): RemoteViews {
+        private fun render(context: Context, size: SizeF, pending: List<Store.Parcel>, dualStrip: Boolean): RemoteViews {
             val result = when {
+                size.height < 105f && dualStrip -> dualStrip(context, size, pending)
                 size.height < 105f -> strip(context, size, pending)
                 size.width < 240f && size.height < 240f -> small(context, size, pending)
                 else -> list(context, size, pending)
@@ -110,6 +113,31 @@ open class PickupWidget : AppWidgetProvider() {
             result.setTextViewText(R.id.widget_meta1, pending.firstOrNull()?.let(::metadata) ?: "轻松出门")
             val countSize = fitHeight(context, 24f, if (hasMeta) room - textHeight(context, 10f) - 2f else room, true)
             result.setTextViewTextSize(R.id.widget_title, TypedValue.COMPLEX_UNIT_SP, fitWidth(context, pending.size.toString(), countSize, 44f))
+            return result
+        }
+
+        private fun dualStrip(context: Context, size: SizeF, pending: List<Store.Parcel>): RemoteViews {
+            val result = RemoteViews(context.packageName, R.layout.widget_dual_strip)
+            val paired = pending.size >= 2
+            result.setViewVisibility(R.id.widget_dual_second, if (paired) View.VISIBLE else View.GONE)
+            result.setViewVisibility(R.id.widget_dual_divider, if (paired) View.VISIBLE else View.GONE)
+            val width = (size.width - 24f - if (paired) 17f else 0f) / if (paired) 2f else 1f
+            val room = (size.height - 16f).coerceAtLeast(1f)
+            val showMeta = room >= textHeight(context, 16f, true) + textHeight(context, 10f) + 2f
+            val codeHeight = room - if (showMeta) textHeight(context, 10f) + 2f else 0f
+            for (index in 0..1) {
+                val parcel = pending.getOrNull(index)
+                val code = parcel?.code ?: "都取完啦"
+                val codeId = if (index == 0) R.id.widget_code1 else R.id.widget_code2
+                val metaId = if (index == 0) R.id.widget_meta1 else R.id.widget_meta2
+                val preferred = fitHeight(context, if (parcel == null) 16f else 22f, codeHeight, true, parcel == null)
+                result.setTextViewText(codeId, code)
+                // Reserve room for per-glyph rounding in older Android TextViews.
+                result.setTextViewTextSize(codeId, TypedValue.COMPLEX_UNIT_SP, fitWidth(context, code, preferred, width - 6f, minimum = 4f))
+                result.setTextViewText(metaId, parcel?.let(::metadata) ?: "轻松出门")
+                result.setTextViewTextSize(metaId, TypedValue.COMPLEX_UNIT_SP, 10f)
+                result.setViewVisibility(metaId, if (showMeta) View.VISIBLE else View.GONE)
+            }
             return result
         }
 
@@ -203,10 +231,10 @@ open class PickupWidget : AppWidgetProvider() {
             return size
         }
 
-        private fun fitWidth(context: Context, text: String, preferred: Float, width: Float, bold: Boolean = true): Float {
+        private fun fitWidth(context: Context, text: String, preferred: Float, width: Float, bold: Boolean = true, minimum: Float = 8f): Float {
             val paint = Paint().apply { typeface = if (bold) Typeface.DEFAULT_BOLD else Typeface.DEFAULT }
             var size = preferred
-            while (size > 8f) {
+            while (size > minimum) {
                 paint.textSize = sp(context, size)
                 if (paint.measureText(text) <= (width - 2f).coerceAtLeast(1f) * context.resources.displayMetrics.density) break
                 size -= .5f
@@ -234,10 +262,11 @@ open class PickupWidget : AppWidgetProvider() {
                     val size = when (provider) {
                         PickupSmallWidget::class.java -> SizeF(130f, 160f)
                         PickupStripWidget::class.java -> SizeF(280f, 56f)
+                        PickupDualStripWidget::class.java -> SizeF(280f, 56f)
                         PickupLargeWidget::class.java -> SizeF(280f, 340f)
                         else -> SizeF(280f, 160f)
                     }
-                    for (id in ids) manager.updateAppWidget(id, views(context, manager.getAppWidgetOptions(id), size))
+                    for (id in ids) manager.updateAppWidget(id, views(context, manager.getAppWidgetOptions(id), size, provider == PickupDualStripWidget::class.java))
                 }
             }
         }
@@ -254,4 +283,9 @@ class PickupStripWidget : PickupWidget() {
 
 class PickupLargeWidget : PickupWidget() {
     override val defaultSize: SizeF get() = SizeF(280f, 340f)
+}
+
+class PickupDualStripWidget : PickupWidget() {
+    override val defaultSize: SizeF get() = SizeF(280f, 56f)
+    override val dualStrip: Boolean get() = true
 }
