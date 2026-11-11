@@ -12,8 +12,9 @@ class UpdateFileProvider : ContentProvider() {
 
     private fun checked(uri: Uri): File {
         val c = context ?: throw FileNotFoundException("更新文件不可用")
+        val release = try { UpdateFiles.pending(c) } catch (_: IOException) { throw FileNotFoundException("更新文件不可用") }
         if (
-            uri.toString() != "content://${c.packageName}.updates/apk" ||
+            uri != UpdateFiles.installUri(c, release) ||
                 !Store.prefs(c).getBoolean("update_ready", false)
         )
             throw FileNotFoundException("更新文件不可用")

@@ -97,6 +97,16 @@ class UpdateDownloadActivity : Activity() {
     private fun refresh() {
         if (!::title.isInitialized || isDestroyed || isFinishing || installing) return
         val p = Store.prefs(this)
+        UpdateFiles.clearInstalled(this)
+        if (p.getString("update_phase", "") == "up_to_date") {
+            title.text = "此版本已安装"
+            detail.text = "当前应用已是下载包的版本或更高版本，无需再次安装。请返回设置检查更新。"
+            bar.isIndeterminate = false; bar.progress = 100
+            primary.text = "返回应用"; primary.isEnabled = true
+            primary.setOnClickListener { finish() }
+            secondary.visibility = View.GONE
+            return
+        }
         val r = try { UpdateFiles.pending(this) } catch (_: IOException) { null }
         val bytes = p.getLong("update_bytes", 0)
         val size = r?.size ?: 0
@@ -109,7 +119,7 @@ class UpdateDownloadActivity : Activity() {
         bar.isIndeterminate = phase == "connecting" || phase == "verifying"
         title.text = when { ready -> "更新已准备好"; phase == "failed" -> "下载未完成"; phase == "cancelled" -> "下载已取消"; else -> "下载更新" }
         detail.text = when {
-            ready -> "安装包校验通过，可以安装新版本。"
+            ready -> "安装包校验通过，已保存到公共 Download 目录，可以安装新版本。"
             phase == "failed" -> p.getString("update_error", "下载中断，请重试。")
             phase == "cancelled" -> "已取消本次下载。可重新下载，或返回应用。"
             phase == "connecting" -> "正在连接下载服务器…\n已保留的进度：${String.format(Locale.CHINA, "%.2f MB", bytes / 1048576.0)}"
@@ -124,6 +134,10 @@ class UpdateDownloadActivity : Activity() {
     }
 
     private fun primaryAction() {
+        if (UpdateFiles.needsDownloadPermission(this)) {
+            requestPermissions(arrayOf(android.Manifest.permission.WRITE_EXTERNAL_STORAGE), 14)
+            return
+        }
         if (Store.prefs(this).getBoolean("update_ready", false)) install()
         else if (UpdateDownloadService.busy(this)) finish()
         else try { UpdateDownloadService.start(this, UpdateFiles.pending(this)); lastTime = 0; refresh() }
@@ -132,6 +146,7 @@ class UpdateDownloadActivity : Activity() {
 
     private fun install() {
         if (installing) return
+        if (UpdateFiles.clearInstalled(this)) { refresh(); return }
         if (!packageManager.canRequestPackageInstalls()) {
             waitingPermission = true
             try { startActivity(Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:$packageName"))) }
@@ -147,7 +162,7 @@ class UpdateDownloadActivity : Activity() {
                     if (isDestroyed || isFinishing) return@post
                     installing = false; refresh()
                     try {
-                        val uri = Uri.parse("content://$packageName.updates/apk")
+                        val uri = UpdateFiles.installUri(this, r)
                         startActivity(Intent(Intent.ACTION_VIEW).setDataAndType(uri, "application/vnd.android.package-archive")
                             .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION).apply { clipData = ClipData.newRawUri("安装包", uri) })
                     } catch (_: RuntimeException) { detail.text = "无法打开系统安装器，请稍后重试。" }

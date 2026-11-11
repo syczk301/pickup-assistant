@@ -6,6 +6,55 @@ import android.os.*
 import java.io.*
 
 object UpdateFiles {
+    fun installUri(c: Context, r: UpdateProtocol.Release): android.net.Uri =
+        android.net.Uri.parse("content://${c.packageName}.updates/apk/${r.code}/${r.hash}")
+    fun needsDownloadPermission(c: Context) = Build.VERSION.SDK_INT < 29 &&
+        c.checkSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED
+
+    // Download privately for safe resume/verification; publish only complete, verified APKs.
+    fun publish(c: Context, r: UpdateProtocol.Release) {
+        val name = "pickup-assistant-${r.name}-${r.code}.apk"
+        val source = file(c, r)
+        if (Build.VERSION.SDK_INT >= 29) {
+            val resolver = c.contentResolver
+            val values = android.content.ContentValues().apply {
+                put(android.provider.MediaStore.MediaColumns.DISPLAY_NAME, name)
+                put(android.provider.MediaStore.MediaColumns.MIME_TYPE, "application/vnd.android.package-archive")
+                put(android.provider.MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
+                put(android.provider.MediaStore.MediaColumns.IS_PENDING, 1)
+            }
+            val uri = resolver.insert(android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
+                ?: throw IOException("无法保存到公共 Download 目录")
+            try {
+                resolver.openOutputStream(uri, "w")?.use { out -> source.inputStream().use { it.copyTo(out) } }
+                    ?: throw IOException("无法写入公共 Download 目录")
+                values.clear(); values.put(android.provider.MediaStore.MediaColumns.IS_PENDING, 0)
+                if (resolver.update(uri, values, null, null) != 1) throw IOException("无法完成安装包保存")
+            } catch (e: Exception) { resolver.delete(uri, null, null); throw e }
+        } else {
+            if (needsDownloadPermission(c)) throw IOException("请允许存储权限，以保存到公共 Download 目录")
+            @Suppress("DEPRECATION")
+            val dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+            if (!dir.isDirectory && !dir.mkdirs()) throw IOException("无法创建 Download 目录")
+            val target = File(dir, name)
+            val temporary = File.createTempFile("pickup-", ".part", dir)
+            try {
+                source.inputStream().use { input -> temporary.outputStream().use { input.copyTo(it) } }
+                UpdateProtocol.verifyBytes(temporary, r)
+                if (target.exists() && !target.delete()) throw IOException("无法替换下载目录中的安装包")
+                if (!temporary.renameTo(target)) throw IOException("无法保存到 Download 目录")
+            } finally { temporary.delete() }
+        }
+    }
+
+    fun clearInstalled(c: Context): Boolean {
+        val r = try { pending(c) } catch (_: IOException) { return false }
+        if (r.code > code(c.packageManager.getPackageInfo(c.packageName, 0))) return false
+        UpdateDownloadService.cancel(c)
+        Store.prefs(c).edit().remove("update_release").putString("update_phase", "up_to_date")
+            .putBoolean("update_install_permission", false).putString("update_error", "").commit()
+        return true
+    }
     fun file(c: Context, r: UpdateProtocol.Release): File {
         val root =
             c.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS) ?: throw IOException("无法访问下载目录")
@@ -56,6 +105,7 @@ object UpdateFiles {
 
     fun status(c: Context): String =
         when {
+            Store.prefs(c).getString("update_phase", "") == "up_to_date" -> "当前已安装此版本，点击检查更新"
             Store.prefs(c).getBoolean("update_ready", false) -> "安装包已下载，点击安装"
             UpdateDownloadService.busy(c) -> "正在下载，点击查看进度"
             Store.prefs(c).getString("update_phase", "") == "cancelled" -> "下载已取消，点击重新下载"

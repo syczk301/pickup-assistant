@@ -57,12 +57,7 @@ class UpdateController(private val activity: Activity) {
     fun resume() {
         visible = true
         val deferred = deferredUi.toList(); deferredUi.clear(); deferred.forEach { ui(it) }
-        try {
-            if (UpdateFiles.pending(context).code <= versionCode()) {
-                UpdateDownloadService.cancel(context)
-                Store.prefs(context).edit().remove("update_release").remove("update_phase").remove("update_engine").apply()
-            }
-        } catch (_: IOException) { }
+        UpdateFiles.clearInstalled(context)
         UpdateDownloadService.recover(context)
         if (Store.prefs(context).getBoolean("update_install_permission", false)) {
             Store.prefs(context).edit().putBoolean("update_install_permission", false).apply()
@@ -73,6 +68,7 @@ class UpdateController(private val activity: Activity) {
     }
 
     fun check(manual: Boolean) {
+        UpdateFiles.clearInstalled(context)
         if (Store.prefs(context).getBoolean("update_ready", false) || UpdateDownloadService.hasTask(context)) {
             if (manual) UpdateDownloadService.open(activity)
             return
@@ -101,6 +97,11 @@ class UpdateController(private val activity: Activity) {
                             UpdatePanel.Builder(activity).setTitle("${channelLabel()}更新 ${r.name}")
                                 .setMessage(r.notes.ifEmpty { "有新版本可用。" } + String.format(Locale.CHINA, "\n\n下载大小：%.2f MB", r.size / 1048576.0))
                                 .setNegativeButton("稍后", null).setPositiveButton("下载更新") { _, _ ->
+                                    if (UpdateFiles.needsDownloadPermission(activity)) {
+                                        activity.requestPermissions(arrayOf(android.Manifest.permission.WRITE_EXTERNAL_STORAGE), 14)
+                                        Toast.makeText(activity, "允许存储权限后，请再次点击检查更新", Toast.LENGTH_LONG).show()
+                                        return@setPositiveButton
+                                    }
                                     UpdateDownloadService.start(activity, r)
                                     UpdateDownloadService.open(activity)
                                 }.show()

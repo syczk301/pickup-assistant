@@ -200,6 +200,7 @@ class UpdateDownloadService : Service() {
                 val final = UpdateFiles.file(this, r)
                 if (final.exists() && !final.delete()) throw IOException("无法清理旧安装包")
                 if (!partial.renameTo(final)) throw IOException("无法保存安装包，请检查存储空间。")
+                UpdateFiles.publish(this, r)
                 Store.prefs(this).edit().putString("update_phase", "ready").putBoolean("update_ready", true)
                     .putString("update_error", "").putLong("update_bytes", r.size).commit()
                 log(this, "大小、SHA-256、包名、版本、签名校验通过")
