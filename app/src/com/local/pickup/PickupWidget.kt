@@ -90,7 +90,7 @@ open class PickupWidget : AppWidgetProvider() {
                 val codeSize = fitHeight(context, 24f, if (showMeta) room - textHeight(context, 11f) - 7f else room - 3f, true)
                 result.setTextViewText(R.id.widget_code1, parcel.code)
                 result.setTextViewTextSize(R.id.widget_code1, TypedValue.COMPLEX_UNIT_SP, fitWidth(context, parcel.code, codeSize, size.width - 28f))
-                result.setTextViewText(R.id.widget_meta1, metadata(parcel))
+                result.setTextViewText(R.id.widget_meta1, metadata(context, parcel))
                 result.setViewVisibility(R.id.widget_meta1, if (showMeta) View.VISIBLE else View.GONE)
                 val more = if (pending.size > 1) "另有 ${pending.size - 1} 件" else "查看包裹"
                 result.setTextViewText(R.id.widget_more, more)
@@ -110,7 +110,7 @@ open class PickupWidget : AppWidgetProvider() {
             val codeSize = fitHeight(context, if (pending.isEmpty()) 16f else 22f, if (hasMeta) room - textHeight(context, 10f) - 2f else room, true, pending.isEmpty())
             result.setTextViewText(R.id.widget_code1, code)
             result.setTextViewTextSize(R.id.widget_code1, TypedValue.COMPLEX_UNIT_SP, fitWidth(context, code, codeSize, size.width - 106f))
-            result.setTextViewText(R.id.widget_meta1, pending.firstOrNull()?.let(::metadata) ?: "轻松出门")
+            result.setTextViewText(R.id.widget_meta1, pending.firstOrNull()?.let { metadata(context, it) } ?: "轻松出门")
             val countSize = fitHeight(context, 24f, if (hasMeta) room - textHeight(context, 10f) - 2f else room, true)
             result.setTextViewTextSize(R.id.widget_title, TypedValue.COMPLEX_UNIT_SP, fitWidth(context, pending.size.toString(), countSize, 44f))
             return result
@@ -134,7 +134,7 @@ open class PickupWidget : AppWidgetProvider() {
                 result.setTextViewText(codeId, code)
                 // Reserve room for per-glyph rounding in older Android TextViews.
                 result.setTextViewTextSize(codeId, TypedValue.COMPLEX_UNIT_SP, fitWidth(context, code, preferred, width - 6f, minimum = 4f))
-                result.setTextViewText(metaId, parcel?.let(::metadata) ?: "轻松出门")
+                result.setTextViewText(metaId, parcel?.let { metadata(context, it) } ?: "轻松出门")
                 result.setTextViewTextSize(metaId, TypedValue.COMPLEX_UNIT_SP, 10f)
                 result.setViewVisibility(metaId, if (showMeta) View.VISIBLE else View.GONE)
             }
@@ -180,7 +180,7 @@ open class PickupWidget : AppWidgetProvider() {
                     if (parcel != null) {
                         result.setTextViewText(codeId, parcel.code)
                         result.setTextViewTextSize(codeId, TypedValue.COMPLEX_UNIT_SP, fitWidth(context, parcel.code, codeSize, cellWidth))
-                        result.setTextViewText(metaId, metadata(parcel))
+                        result.setTextViewText(metaId, metadata(context, parcel))
                         result.setTextViewTextSize(metaId, TypedValue.COMPLEX_UNIT_SP, metaSize)
                         result.setViewVisibility(metaId, if (showMeta) View.VISIBLE else View.GONE)
                     }
@@ -216,7 +216,8 @@ open class PickupWidget : AppWidgetProvider() {
             result.setViewVisibility(R.id.widget_empty_subtitle, if (room >= spacing + 2f + main + link + textHeight(context, subtitleSize)) View.VISIBLE else View.GONE)
         }
 
-        private fun metadata(parcel: Store.Parcel): String = parcel.station.ifBlank { parcel.carrier.ifBlank { "待取包裹" } }
+        private fun metadata(context: Context, parcel: Store.Parcel): String = ExtractionOptions.widgetMetadata(
+            parcel.carrier, parcel.station, Store.prefs(context).getBoolean("widget_show_station", false))
         private fun footerFits(context: Context, size: SizeF, pending: List<Store.Parcel>) = pending.isNotEmpty() &&
             size.height >= 24f + headerHeight(context) + footerHeight(context) + 12f + textHeight(context, 12f, true) + 6f
         private fun headerHeight(context: Context) = maxOf(24f, textHeight(context, 12f) + 4f)

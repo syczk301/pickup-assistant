@@ -2,11 +2,11 @@
   "schemaVersion": 1,
   "packageName": "com.local.pickup",
   "channel": "beta",
-  "versionCode": 40,
-  "versionName": "0.5.23",
+  "versionCode": 41,
+  "versionName": "0.5.24",
   "minSdk": 26,
-  "apkUrl": "https://github.com/syczk301/pickup-assistant/releases/download/v0.5.23-beta.1/pickup-assistant-0.5.23.apk",
-  "sizeBytes": 19326599,
-  "sha256": "5ec505f4847deb215f55db1a3c6fb05067bcbde12a0e9ca923ea58bb15bf189e",
-  "releaseNotes": "拾件簿 0.5.23 Beta 1\n\n- 更新包下载并校验完成后保存到公共 Download 目录，文件名包含版本名称及内部版本号。\n- 安装入口按版本和安装包哈希区分，避免旧包和新包共用同一安装链接。\n- 清理已安装或更低版本的遗留更新任务，避免重复提示安装。\n- Android 8/9 在下载前按需申请公共目录写入权限；Android 10 及以上使用系统下载集合。\n\n构建、原发布签名、144 项回归及 JSON 迁移检查通过。手机上的公共目录写入和安装流程尚待验证；用户报告的相同版本提示尚未在该手机复现确认根因。\n\n可使用原包名和签名直接覆盖安装，无需卸载。旧版应用内更新若提示相同版本，可从本页下载 APK 覆盖安装。正式渠道保持 0.5.20。"
+  "apkUrl": "https://github.com/syczk301/pickup-assistant/releases/download/v0.5.24-beta.1/pickup-assistant-0.5.24.apk",
+  "sizeBytes": 19334791,
+  "sha256": "0f389e9846fcf1c2a1c564540267091b1457f48fb293d6ad9db58f748cd8d74c",
+  "releaseNotes": "拾件簿 0.5.24 Beta 1\n\n- 新增“设置 → 信息提取”，可选择是否自动提取快递商、驿站／地址。取件码始终提取，快递商默认开启，驿站／地址默认关闭。\n- 开关统一适用于新短信、历史短信扫描、粘贴和图片识别；已有记录、识别原文和手动填写内容保留。\n- 桌面小组件默认只显示快递商，可在“显示与数据”中开启驿站／地址显示。开启后快递商在前、地址在后，长内容省略。\n- 切换小组件地址显示后立即刷新所有小组件样式。\n\n构建和回归检查通过，新增字段选择及小组件内容测试通过。真机界面与桌面显示尚待验证。\n使用原包名和发布签名，可覆盖安装。测试渠道内部版本号 41；正式渠道保持 0.5.23。"
 }

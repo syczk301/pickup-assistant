@@ -57,6 +57,11 @@ object Store {
     fun prefs(c: Context): SharedPreferences =
         c.getSharedPreferences("pickup", Context.MODE_PRIVATE)
 
+    fun extractionOptions(c: Context) = ExtractionOptions(
+        prefs(c).getBoolean("extract_carrier", true),
+        prefs(c).getBoolean("extract_station", false),
+    )
+
     @Synchronized
     fun load(c: Context): MutableList<Parcel> {
         try {
@@ -105,7 +110,7 @@ object Store {
     fun ingest(c: Context, text: String, time: Long): Int {
         val parcels = load(c)
         var added = 0
-        for (r in SmsParser.parse(text)) {
+        for (r in SmsParser.parse(text).map(extractionOptions(c)::apply)) {
             val duplicate =
                 parcels.any {
                     it.code.equals(r.code, true) &&

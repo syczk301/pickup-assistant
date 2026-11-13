@@ -803,7 +803,8 @@ class MainActivity : Activity() {
             val current = oldParsed.getOrNull(selected)
             originalButton.visibility = if (fromImage && imageOriginal.isNotBlank()) View.VISIBLE else View.GONE
             val image = if (fromImage) ImageParcelParser.parse(value) else null
-            parsed = image?.parcels ?: SmsParser.parse(value)
+            val options = Store.extractionOptions(this@MainActivity)
+            parsed = (image?.parcels ?: SmsParser.parse(value)).map(options::apply)
             drafts = parsed.map { candidate ->
                 oldDrafts.getOrNull(oldParsed.indexOf(candidate)) ?: Store.Parcel(
                     code = candidate.code, carrier = candidate.carrier, station = candidate.station)
@@ -811,8 +812,8 @@ class MainActivity : Activity() {
             selected = parsed.indexOf(current).coerceAtLeast(0)
             if (drafts.isNotEmpty()) fill(drafts[selected])
             else if (image != null) {
-                if (image.station.isNotBlank()) station.setText(image.station)
-                if (image.carrier != "其他") carrier.setSelection(SmsParser.CARRIERS.indexOf(image.carrier))
+                if (options.station && image.station.isNotBlank()) station.setText(image.station)
+                if (options.carrier && image.carrier != "其他") carrier.setSelection(SmsParser.CARRIERS.indexOf(image.carrier))
             }
             result.text = when {
                 value.isBlank() -> "也可以直接填写下方取件信息"
@@ -1110,6 +1111,14 @@ class MainActivity : Activity() {
             ::requestSmsPermission,
         )
         settingRow(c, "扫描最近 30 天短信", if (scanning) "正在扫描…" else "仅识别快递相关短信，重复记录自动跳过", ::scan)
+        val extraction = settingsGroup("extraction", "信息提取") {
+            val options = Store.extractionOptions(this)
+            listOf("取件码", if (options.carrier) "快递商" else "", if (options.station) "驿站／地址" else "")
+                .filter { it.isNotEmpty() }.joinToString(" · ")
+        }
+        extraction.addView(text("取件码始终提取。以下开关适用于新短信、历史短信扫描、粘贴和图片识别；已有记录和识别原文保留，仍可手动填写。", 12, muted))
+        toggle(extraction, "提取快递商", "关闭后不自动填写快递商", "extract_carrier", true)
+        toggle(extraction, "提取驿站／地址", "默认关闭；开启后自动填写驿站名称及取件地址", "extract_station", false)
         val reminders = settingsGroup("reminders", "通知与提醒") {
             val notify = if (prefs.getBoolean("notify", true)) "新包裹通知已开启" else "新包裹通知已关闭"
             val daily = if (prefs.getBoolean("remind", false)) String.format(Locale.CHINA, "每天 %02d:%02d 提醒", prefs.getInt("hour", 18), prefs.getInt("minute", 0)) else "每日提醒已关闭"
@@ -1147,6 +1156,9 @@ class MainActivity : Activity() {
             )
         }
         val data = settingsGroup("data", "显示与数据") { "${if (prefs.getBoolean("dark", false)) "深色模式" else "浅色模式"} · 本地备份 · 桌面小组件" }
+        toggle(data, "小组件显示驿站／地址", "默认只显示快递商；开启后地址排在快递商后，过长省略", "widget_show_station", false) {
+            PickupWidget.refresh(this)
+        }
         toggle(data, "深色模式", "切换页面背景与文字配色", "dark", false) { recreate() }
         settingRow(data, "导出本地备份", "JSON 格式，包含完整取件记录") {
             startActivityForResult(
